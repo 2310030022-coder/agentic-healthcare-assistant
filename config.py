@@ -1,15 +1,15 @@
 
 import os
-import random
+import re
 import time
+import random
 from functools import lru_cache
 
 from google import genai
 
 
-@lru_cache(maxsize=1)
-def get_client():
-    key = os.environ.get("GEMINI_API_KEY", "").strip()
+def get_api_key():
+    key = os.getenv("GEMINI_API_KEY", "").strip()
 
     if not key:
         try:
@@ -22,33 +22,49 @@ def get_client():
 
     if not key:
         raise RuntimeError(
-            "GEMINI_API_KEY is missing. "
-            "Add it to Streamlit Cloud > Settings > Secrets."
+            "Gemini API key is missing. "
+            "Add GEMINI_API_KEY in Streamlit Cloud Secrets."
         )
 
-    return genai.Client(api_key=key)
+    return key
 
 
-def _model_names():
+@lru_cache(maxsize=1)
+def get_client():
+    return genai.Client(api_key=get_api_key())
+
+
+def get_available_models():
     client = get_client()
     names = []
 
     try:
-        for item in client.models.list():
-            name = str(getattr(item, "name", ""))
-            name = name.removeprefix("models/")
+        for model in client.models.list():
+            name = str(
+                getattr(model, "name", "")
+            ).removeprefix("models/")
 
-            actions = getattr(
-                item, "supported_actions", None
+            actions = (
+                getattr(model, "supported_actions", None)
+                or getattr(
+                    model,
+                    "supported_generation_methods",
+                    None,
+                )
             )
 
             if not name.startswith("gemini-"):
                 continue
 
             if any(
-                x in name.lower()
-                for x in (
-                    "image", "live", "tts", "embedding"
+                excluded in name.lower()
+                for excluded in (
+                    "embedding",
+                    "image",
+                    "live",
+                    "tts",
+                    "audio",
+                    "robotics",
                 )
             ):
                 continue
@@ -58,11 +74,11 @@ def _model_names():
 
             names.append(name)
 
-    except Exception:
-        names = [
-            "gemini-2.5-flash-lite",
-            "gemini-2.5-flash",
-        ]
+    except Exception as exc:
+        raise RuntimeError(
+            "Unable to retrieve available Gemini models. "
+            f"Details: {str(exc)[:200]}"
+        ) from exc
 
     preferred = [
         "gemini-2.5-flash-lite",
@@ -70,61 +86,50 @@ def _model_names():
     ]
 
     ordered = [
-        n for n in preferred if n in names
+        model
+        for model in preferred
+        if model in names
     ]
 
     ordered.extend(
-        n for n in names
-        if n not in ordered
-        and "flash" in n.lower()
+        model
+        for model in names
+        if model not in ordered
+        and "flash" in model.lower()
     )
 
     ordered.extend(
-        n for n in names if n not in ordered
+        model
+        for model in names
+        if model not in ordered
     )
 
-    return ordered[:5]
+    return list(dict.fromkeys(ordered))
 
 
-def _status(exc):
-    code = (
-        getattr(exc, "code", None)
-        or getattr(exc, "status_code", None)
+def get_error_code(exc):
+    for field in ("code", "status_code"):
+        value = getattr(exc, field, None)
+
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            pass
+
+    match = re.search(
+        r"\b(400|401|403|404|429|500|502|503|504)\b",
+        str(exc),
     )
 
-    try:
-        return int(code)
-    except (TypeError, ValueError):
-        return None
-
-
-def _is_temporary(exc):
-    message = str(exc).lower()
-
-    return (
-        _status(exc) in (500, 502, 503, 504)
-        or any(
-            phrase in message
-            for phrase in (
-                "503",
-                "unavailable",
-                "high demand",
-                "overloaded",
-                "internal error",
-                "deadline exceeded",
-            )
-        )
-    )
+    return int(match.group(1)) if match else None
 
 
 def generate_ai_response(prompt):
     if not str(prompt).strip():
-        raise ValueError(
-            "AI prompt cannot be empty."
-        )
+        raise ValueError("Please enter a request.")
 
     client = get_client()
-    models = _model_names()
+    models = get_available_models()
 
     if not models:
         raise RuntimeError(
@@ -132,93 +137,93 @@ def generate_ai_response(prompt):
             "are available for this API key."
         )
 
-    failures = []
+    exhausted = []
+    unavailable = []
+    temporary = []
 
-    for model in models:
-        for attempt in range(3):
+    # Limit the number of models tried per request.
+    for model_name in models[:8]:
+
+        for attempt in range(2):
             try:
-                response = (
-                    client.models.generate_content(
-                        model=model,
-                        contents=str(prompt),
-                    )
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=str(prompt),
                 )
 
                 answer = getattr(
-                    response, "text", None
+                    response,
+                    "text",
+                    None,
                 )
 
                 if answer and answer.strip():
                     return answer.strip()
 
-                failures.append(
-                    f"{model}: empty response"
-                )
+                unavailable.append(model_name)
                 break
 
             except Exception as exc:
-                message = str(exc)
+                code = get_error_code(exc)
+                message = str(exc).lower()
 
-                if _is_temporary(exc):
-                    if attempt < 2:
+                # Daily or rate quota reached.
+                # Do not retry the same model.
+                if (
+                    code == 429
+                    or "resource_exhausted" in message
+                    or "quota exceeded" in message
+                ):
+                    exhausted.append(model_name)
+                    break
+
+                # Model not supported by the key.
+                if code == 404:
+                    unavailable.append(model_name)
+                    break
+
+                # Temporary server overload.
+                if code in (500, 502, 503, 504):
+                    if attempt == 0:
                         time.sleep(
-                            min(
-                                2 ** attempt
-                                + random.uniform(0, 0.5),
-                                4,
-                            )
+                            1.0 + random.uniform(0, 0.5)
                         )
                         continue
 
-                    failures.append(
-                        f"{model}: temporarily unavailable (503)"
-                    )
+                    temporary.append(model_name)
                     break
 
-                if (
-                    _status(exc) == 404
-                    or "not found" in message.lower()
-                ):
-                    failures.append(
-                        f"{model}: not available to this API key"
-                    )
-                    break
-
-                if (
-                    _status(exc) == 429
-                    or "resource_exhausted" in message.lower()
-                    or "quota exceeded" in message.lower()
-                ):
+                # Authentication and permissions.
+                if code in (400, 401, 403):
                     raise RuntimeError(
-                        "Gemini API quota/rate limit reached "
-                        "(429). Check Google AI Studio usage "
-                        "and try later."
+                        "Gemini API key, permissions, or "
+                        "request configuration error. "
+                        f"Details: {str(exc)[:250]}"
                     ) from exc
 
-                if (
-                    _status(exc) in (400, 401, 403)
-                    or any(
-                        term in message.lower()
-                        for term in (
-                            "api_key_invalid",
-                            "api key not valid",
-                            "permission_denied",
-                        )
-                    )
-                ):
-                    raise RuntimeError(
-                        "Gemini API authentication or "
-                        f"request error: {message[:400]}"
-                    ) from exc
+                raise RuntimeError(
+                    "Gemini request failed. "
+                    f"Details: {str(exc)[:250]}"
+                ) from exc
 
-                failures.append(
-                    f"{model}: {message[:200]}"
-                )
-                break
+    if exhausted:
+        raise RuntimeError(
+            "Gemini API request quota has been reached "
+            "for the available models. "
+            "Please wait for the quota to reset "
+            "or check billing and usage in Google AI Studio. "
+            "Exhausted models: "
+            + ", ".join(exhausted[:5])
+        )
+
+    if temporary:
+        raise RuntimeError(
+            "Gemini is temporarily overloaded. "
+            "Please try again later."
+        )
 
     raise RuntimeError(
-        "Gemini models are currently unavailable "
-        "after automatic retries and fallback. "
-        "Please try again shortly. Details: "
-        + " | ".join(failures[:5])
+        "No compatible Gemini model returned a response. "
+        "Check the models and API permissions "
+        "in Google AI Studio."
     )
