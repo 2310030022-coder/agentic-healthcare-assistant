@@ -2,15 +2,7 @@
 import streamlit as st
 import pandas as pd
 
-from healthcare.ui_style import (
-    apply_custom_style,
-    render_hero,
-    render_feature_cards,
-)
-from healthcare.database import (
-    initialize_database,
-    get_connection,
-)
+from healthcare.database import initialize_database, get_connection
 from healthcare.records import (
     get_patients,
     get_patient,
@@ -26,192 +18,233 @@ from healthcare.appointments import (
     get_patient_appointments,
     cancel_appointment,
 )
-from healthcare.medical_search import (
-    retrieve_medical_information,
-)
+from healthcare.medical_search import retrieve_medical_information
 from healthcare.config import generate_ai_response
 
 
 # ======================================================
-# APP CONFIGURATION
+# PAGE SETUP
 # ======================================================
 
 st.set_page_config(
-    page_title="MediFlow AI | Healthcare Management",
+    page_title="MediFlow AI",
     page_icon="🏥",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-apply_custom_style()
 initialize_database()
 
 
 # ======================================================
-# DOCTOR PROFILE IMAGES
-# Illustrative photographs, not the actual named doctors.
+# PROFESSIONAL WEBSITE DESIGN
+# ======================================================
+
+st.markdown("""
+<style>
+.stApp {
+    background: linear-gradient(115deg, #f0f8ff, #f7f0ff);
+    color: #142448;
+}
+
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #192a69, #176c9d);
+}
+
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3,
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] label {
+    color: white !important;
+}
+
+section[data-testid="stSidebar"] [role="radiogroup"] p {
+    color: white !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+}
+
+section[data-testid="stSidebar"] [data-baseweb="select"] * {
+    color: #142448 !important;
+    -webkit-text-fill-color: #142448 !important;
+}
+
+section[data-testid="stSidebar"] .stButton button {
+    background: white !important;
+    color: #153d82 !important;
+    border: 2px solid #b8d7ff !important;
+    font-weight: 800 !important;
+}
+
+section[data-testid="stSidebar"] .stButton button p {
+    color: #153d82 !important;
+}
+
+.stButton > button {
+    border-radius: 12px;
+    font-weight: 700;
+    min-height: 45px;
+}
+
+.stButton > button[kind="primary"] {
+    background: linear-gradient(90deg, #1768e8, #7743e8);
+    border: none;
+    color: white;
+}
+
+[data-testid="stMetric"] {
+    background: white;
+    padding: 18px;
+    border-radius: 16px;
+    border: 1px solid #dbe5fa;
+}
+
+[data-testid="stForm"] {
+    background: white;
+    padding: 18px;
+    border-radius: 18px;
+    border: 1px solid #dce6f8;
+}
+
+h1, h2, h3 {
+    color: #193b78;
+    font-weight: 800;
+}
+
+.hero {
+    background: linear-gradient(110deg, #125ad7, #6844d8);
+    color: white;
+    padding: 30px;
+    border-radius: 22px;
+    margin: 14px 0 25px;
+}
+
+.hero h1, .hero p {
+    color: white !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
+# ======================================================
+# DOCTOR IMAGES
+# Illustrative photos, not images of named doctors.
 # ======================================================
 
 DOCTOR_IMAGES = {
     "Nephrology":
-        "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=500&fit=crop",
+        "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=450&fit=crop",
     "Cardiology":
-        "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=500&fit=crop",
-    "Neurology":
-        "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=500&fit=crop",
-    "Orthopedics":
-        "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=500&fit=crop",
-    "Dermatology":
-        "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=500&fit=crop",
+        "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=450&fit=crop",
     "General Medicine":
-        "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=500&fit=crop",
+        "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=450&fit=crop",
+    "Neurology":
+        "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=450&fit=crop",
+    "Orthopedics":
+        "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=450&fit=crop",
+    "Dermatology":
+        "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=450&fit=crop",
 }
 
-DEFAULT_DOCTOR_IMAGE = (
-    "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=500&fit=crop"
+DEFAULT_IMAGE = (
+    "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=450&fit=crop"
 )
 
 
 # ======================================================
-# DATABASE HELPERS
+# ADD DOCTORS ACROSS DEPARTMENTS
 # ======================================================
 
-def create_patient(name, age):
-    name = name.strip()
-
-    if len(name) < 2:
-        raise ValueError("Enter a valid patient name.")
-
-    with get_connection() as conn:
-        cursor = conn.execute(
-            "INSERT INTO patients (name, age) VALUES (?, ?)",
-            (name, int(age)),
-        )
-        conn.commit()
-        return cursor.lastrowid
-
-
-def seed_doctors():
-    doctors = [
-        ("Dr. Kavya Reddy", "Neurology"),
-        ("Dr. Arjun Nair", "Orthopedics"),
-        ("Dr. Sneha Kapoor", "Dermatology"),
-        ("Dr. Rohan Desai", "Gastroenterology"),
-        ("Dr. Ishita Verma", "Endocrinology"),
-        ("Dr. Aditya Menon", "Pulmonology"),
-        ("Dr. Neha Shah", "ENT"),
-        ("Dr. Vivek Bansal", "Ophthalmology"),
-        ("Dr. Pooja Sinha", "Gynecology"),
-        ("Dr. Nikhil Joshi", "Psychiatry"),
-        ("Dr. Ritu Malhotra", "Pediatrics"),
-        ("Dr. Aarav Khanna", "Nephrology"),
-        ("Dr. Diya Sharma", "Cardiology"),
-        ("Dr. Simran Gupta", "General Medicine"),
-    ]
-
-    with get_connection() as conn:
-        existing = {
-            (row["name"], row["specialization"])
-            for row in conn.execute(
-                "SELECT name, specialization FROM doctors"
-            ).fetchall()
-        }
-
-        for name, specialty in doctors:
-            if (name, specialty) not in existing:
-                conn.execute(
-                    """
-                    INSERT INTO doctors (name, specialization)
-                    VALUES (?, ?)
-                    """,
-                    (name, specialty),
-                )
-
-        conn.commit()
-
-
-seed_doctors()
-
-
-# ======================================================
-# HELPERS
-# ======================================================
-
-PAGES = [
-    "🏠 Dashboard",
-    "👤 Patients",
-    "📅 Appointments",
-    "📋 Medical Records",
-    "🩺 History Summary",
-    "🔎 Medical Research",
-    "🤖 AI Healthcare Assistant",
-    "🧠 FAISS Memory",
-    "📊 Evaluation & Monitoring",
+EXTRA_DOCTORS = [
+    ("Dr. Kavya Reddy", "Neurology"),
+    ("Dr. Arjun Nair", "Orthopedics"),
+    ("Dr. Sneha Kapoor", "Dermatology"),
+    ("Dr. Rohan Desai", "Gastroenterology"),
+    ("Dr. Ishita Verma", "Endocrinology"),
+    ("Dr. Aditya Menon", "Pulmonology"),
+    ("Dr. Neha Shah", "ENT"),
+    ("Dr. Vivek Bansal", "Ophthalmology"),
+    ("Dr. Pooja Sinha", "Gynecology"),
+    ("Dr. Nikhil Joshi", "Psychiatry"),
+    ("Dr. Ritu Malhotra", "Pediatrics"),
+    ("Dr. Aarav Khanna", "Nephrology"),
+    ("Dr. Diya Sharma", "Cardiology"),
+    ("Dr. Simran Gupta", "General Medicine"),
 ]
 
+with get_connection() as conn:
+    existing = {
+        (row["name"], row["specialization"])
+        for row in conn.execute(
+            "SELECT name, specialization FROM doctors"
+        )
+    }
 
-def as_dicts(rows):
-    return [dict(row) for row in rows]
+    for name, specialization in EXTRA_DOCTORS:
+        if (name, specialization) not in existing:
+            conn.execute(
+                """
+                INSERT INTO doctors (name, specialization)
+                VALUES (?, ?)
+                """,
+                (name, specialization),
+            )
+
+    conn.commit()
 
 
-def show_table(rows, message="No records available."):
-    if rows:
+# ======================================================
+# HELPER FUNCTIONS
+# ======================================================
+
+def table(items):
+    if items:
         st.dataframe(
-            pd.DataFrame(rows),
-            use_container_width=True,
+            pd.DataFrame([dict(x) for x in items]),
             hide_index=True,
+            use_container_width=True,
         )
     else:
-        st.info(message)
+        st.info("No entries yet.")
 
 
-def navigate(destination):
-    st.session_state["_next_page"] = destination
+def go(destination):
+    st.session_state["next_page"] = destination
     st.rerun()
 
 
-def success_notification(message):
-    st.session_state["_success_message"] = message
+def announce(message):
+    st.session_state["notice"] = message
     st.rerun()
 
 
-def result_success(result):
+def successful(result):
     if isinstance(result, dict):
         return result.get("success", True)
     return result is not False
 
 
-def result_error(result):
-    if isinstance(result, dict):
-        return result.get("message", "Operation failed.")
-    return "Operation failed."
-
-
-DEPARTMENT_GUIDE = {
-    "Kidney or urinary concerns": "Nephrology",
-    "Heart concerns": "Cardiology",
-    "Headache or neurological concerns": "Neurology",
-    "Bones and joints": "Orthopedics",
-    "Skin or hair concerns": "Dermatology",
-    "Digestive concerns": "Gastroenterology",
-    "Diabetes or thyroid concerns": "Endocrinology",
-    "Breathing concerns": "Pulmonology",
-    "Ear, nose or throat": "ENT",
-    "Eye or vision concerns": "Ophthalmology",
-    "Women's health": "Gynecology",
-    "Mental health": "Psychiatry",
-    "Children's health": "Pediatrics",
-    "General consultation": "General Medicine",
-}
-
-
 # ======================================================
-# NAVIGATION STATE
+# NAVIGATION
 # ======================================================
 
-if "_next_page" in st.session_state:
+PAGES = [
+    "🏠 Dashboard",
+    "👤 Patients",
+    "👨‍⚕️ Doctors",
+    "📅 Appointments",
+    "📋 Medical Records",
+    "🩺 History Summary",
+    "🔎 Medical Research",
+    "🤖 AI Assistant",
+    "🧠 FAISS Memory",
+    "📊 Monitoring",
+]
+
+if "next_page" in st.session_state:
     st.session_state["page"] = st.session_state.pop(
-        "_next_page"
+        "next_page"
     )
 
 
@@ -221,70 +254,80 @@ if "_next_page" in st.session_state:
 
 with st.sidebar:
     st.title("🏥 MediFlow AI")
-    st.caption("INTELLIGENT HEALTHCARE WORKSPACE")
+    st.markdown("**HEALTHCARE WORKSPACE**")
 
     page = st.radio(
-        "Explore Modules",
+        "Explore modules",
         PAGES,
         key="page",
     )
 
     st.divider()
-    st.subheader("👤 Patient Workspace")
+    st.subheader("Patient Workspace")
 
-    patients = as_dicts(get_patients())
+    patients = [dict(x) for x in get_patients()]
 
-    patient_id = None
-    patient = None
+    labels = {
+        f"{x['name']} · ID {x['id']}": x["id"]
+        for x in patients
+    }
 
-    if patients:
-        patient_options = {
-            f"{p['name']} • ID {p['id']}": p["id"]
-            for p in patients
-        }
-
-        selected_label = st.selectbox(
-            "Select Patient",
-            list(patient_options.keys()),
-            key="patient_selector",
+    chosen = (
+        st.selectbox(
+            "Select patient",
+            list(labels),
+            key="patient_choice",
         )
+        if labels
+        else None
+    )
 
-        patient_id = patient_options[selected_label]
-        patient = get_patient(patient_id)
+    patient_id = labels[chosen] if chosen else None
 
-        if patient:
-            st.write(f"**Name:** {patient['name']}")
-            st.write(f"**Age:** {patient['age']} years")
+    patient = (
+        dict(get_patient(patient_id))
+        if patient_id is not None
+        else None
+    )
+
+    if patient:
+        st.write(
+            f"**{patient['name']}** · {patient['age']} years"
+        )
 
     if st.button(
         "➕ Register New Patient",
         use_container_width=True,
-        key="sidebar_register",
     ):
-        navigate("👤 Patients")
-
-    st.divider()
-    st.caption("✨ Powered by Google Gemini")
+        go("👤 Patients")
 
 
 # ======================================================
-# NOTIFICATIONS
+# SUCCESS ALERTS AND POPUP NOTIFICATIONS
 # ======================================================
 
-if "_success_message" in st.session_state:
-    message = st.session_state.pop("_success_message")
-    st.toast(message, icon="✅")
-    st.success(message)
+if "notice" in st.session_state:
+    notice = st.session_state.pop("notice")
+
+    st.success(notice, icon="✅")
+    st.toast(notice, icon="🎉")
 
 
 # ======================================================
-# MAIN HEADER
+# WEBSITE HEADER
 # ======================================================
 
-st.title("🏥 MediFlow AI")
-st.caption(
-    "Intelligent Healthcare Management Platform • "
-    "Gemini AI • LangGraph • FAISS"
+st.markdown(
+    """
+    <div class="hero">
+        <h1>🏥 MediFlow AI</h1>
+        <p>
+            Smart Patient Management · Doctor Discovery ·
+            Appointments · AI-Powered Assistance
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
 
@@ -294,82 +337,101 @@ st.caption(
 
 if page == "🏠 Dashboard":
 
-    # Use a native hero to avoid raw HTML rendering.
-    with st.container(border=True):
-        st.caption("✨ SMART HEALTHCARE WORKSPACE")
-        st.header("Smarter Care. Seamless Coordination.")
-        st.write(
-            "Manage patient profiles, coordinate appointments, "
-            "explore medical specialties, access records, "
-            "and use intelligent healthcare tools."
-        )
-
-    doctors = as_dicts(get_doctors())
-
-    history = (
-        as_dicts(get_medical_history(patient_id))
-        if patient_id is not None else []
-    )
+    doctors = [dict(x) for x in get_doctors()]
 
     bookings = (
-        as_dicts(get_patient_appointments(patient_id))
-        if patient_id is not None else []
+        [
+            dict(x)
+            for x in get_patient_appointments(patient_id)
+        ]
+        if patient_id
+        else []
     )
 
-    active = [
-        b for b in bookings
-        if b.get("status") == "Booked"
+    cols = st.columns(4)
+
+    labels = [
+        "Patients",
+        "Doctors",
+        "Patient Appointments",
+        "Departments",
     ]
 
-    c1, c2, c3, c4 = st.columns(4)
+    values = [
+        len(patients),
+        len(doctors),
+        len(bookings),
+        len({
+            d["specialization"]
+            for d in doctors
+        }),
+    ]
 
-    c1.metric("👥 Patients", len(patients))
-    c2.metric("👨‍⚕️ Doctors", len(doctors))
-    c3.metric("📋 Records", len(history))
-    c4.metric("📅 Appointments", len(active))
+    for col, label, value in zip(
+        cols, labels, values
+    ):
+        col.metric(label, value)
 
-    st.subheader("✨ Explore the Platform")
+    st.subheader("Explore the Platform")
 
-    render_feature_cards()
+    options = [
+        ("🤖 Intelligent AI Agent", "🤖 AI Assistant"),
+        ("📅 Smart Appointments", "📅 Appointments"),
+        ("👨‍⚕️ Browse Doctors", "👨‍⚕️ Doctors"),
+        ("🧠 Semantic Memory", "🧠 FAISS Memory"),
+    ]
 
-    st.subheader("🚀 Quick Actions")
+    for col, (label, target) in zip(
+        st.columns(4), options
+    ):
+        with col:
+            with st.container(border=True):
+                st.markdown("### " + label)
 
-    a, b, c = st.columns(3)
+                if st.button(
+                    "Open Module →",
+                    key="nav_" + target,
+                    use_container_width=True,
+                ):
+                    go(target)
 
-    with a:
-        if st.button(
-            "➕ Add Patient",
-            use_container_width=True,
-        ):
-            navigate("👤 Patients")
+    st.subheader("👨‍⚕️ Featured Doctors")
 
-    with b:
-        if st.button(
-            "📅 Book Appointment",
-            use_container_width=True,
-        ):
-            navigate("📅 Appointments")
+    for col, doctor in zip(
+        st.columns(3), doctors[:3]
+    ):
+        with col:
+            with st.container(border=True):
 
-    with c:
-        if st.button(
-            "📋 Manage Records",
-            use_container_width=True,
-        ):
-            navigate("📋 Medical Records")
+                st.image(
+                    DOCTOR_IMAGES.get(
+                        doctor["specialization"],
+                        DEFAULT_IMAGE,
+                    ),
+                    use_container_width=True,
+                )
 
-    st.subheader("👤 Patient Profile")
+                st.markdown(
+                    "**" + doctor["name"] + "**"
+                )
 
-    if patient:
-        with st.container(border=True):
-            st.write(f"**Name:** {patient['name']}")
-            st.write(f"**Age:** {patient['age']}")
-            st.write(f"**Patient ID:** {patient_id}")
+                st.caption(
+                    doctor["specialization"]
+                    + " · Illustrative profile photo"
+                )
 
-    st.subheader("Recent Medical History")
-    show_table(history[:5])
+                if st.button(
+                    "Book With This Doctor",
+                    key="home_dr_" + str(doctor["id"]),
+                    use_container_width=True,
+                ):
+                    st.session_state["pref_doctor"] = (
+                        doctor["id"]
+                    )
+                    go("📅 Appointments")
 
-    st.subheader("Active Appointments")
-    show_table(active)
+    st.subheader("Recent Appointments")
+    table(bookings[:5])
 
 
 # ======================================================
@@ -378,15 +440,15 @@ if page == "🏠 Dashboard":
 
 elif page == "👤 Patients":
 
-    st.header("👤 Patient Registration")
+    st.header("👤 Register a Patient")
 
     with st.form(
-        "patient_registration",
+        "register",
         clear_on_submit=True,
     ):
         name = st.text_input(
-            "Patient Full Name",
-            placeholder="Enter patient name",
+            "Full Patient Name",
+            placeholder="Enter full name",
         )
 
         age = st.number_input(
@@ -396,302 +458,411 @@ elif page == "👤 Patients":
             value=30,
         )
 
-        submitted = st.form_submit_button(
-            "✅ Register Patient",
+        submit = st.form_submit_button(
+            "➕ Register Patient",
             type="primary",
             use_container_width=True,
         )
 
-    if submitted:
+    if submit:
         if len(name.strip()) < 2:
-            st.error("Enter a valid patient name.")
+            st.error(
+                "Please enter a valid patient name."
+            )
         else:
             try:
-                new_id = create_patient(name, age)
+                with get_connection() as conn:
+                    cursor = conn.execute(
+                        """
+                        INSERT INTO patients (name, age)
+                        VALUES (?, ?)
+                        """,
+                        (name.strip(), int(age)),
+                    )
 
-                success_notification(
+                    conn.commit()
+                    new_id = cursor.lastrowid
+
+                announce(
                     f"Patient {name.strip()} registered "
                     f"successfully! Patient ID: {new_id}"
                 )
 
             except Exception as exc:
-                st.error(f"Registration failed: {exc}")
+                st.error(
+                    f"Registration failed: {exc}"
+                )
 
     st.subheader("Registered Patients")
-    show_table(as_dicts(get_patients()))
+    table(get_patients())
 
 
 # ======================================================
-# APPOINTMENT BOOKING
+# DOCTORS DIRECTORY
+# ======================================================
+
+elif page == "👨‍⚕️ Doctors":
+
+    st.header("👨‍⚕️ Meet Our Doctors")
+
+    doctors = [dict(x) for x in get_doctors()]
+
+    specialties = sorted({
+        d["specialization"]
+        for d in doctors
+    })
+
+    selected_specialty = st.selectbox(
+        "Filter By Department",
+        ["All Departments"] + specialties,
+    )
+
+    shown = [
+        d for d in doctors
+        if (
+            selected_specialty == "All Departments"
+            or d["specialization"] == selected_specialty
+        )
+    ]
+
+    for offset in range(0, len(shown), 3):
+
+        for col, doctor in zip(
+            st.columns(3),
+            shown[offset:offset + 3],
+        ):
+
+            with col:
+                with st.container(border=True):
+
+                    st.image(
+                        DOCTOR_IMAGES.get(
+                            doctor["specialization"],
+                            DEFAULT_IMAGE,
+                        ),
+                        use_container_width=True,
+                    )
+
+                    st.subheader(doctor["name"])
+
+                    st.write(
+                        "🩺 " + doctor["specialization"]
+                    )
+
+                    st.caption(
+                        "Illustrative photo · "
+                        "Simulated doctor profile"
+                    )
+
+                    if st.button(
+                        "📅 Book Appointment",
+                        key="doctor_" + str(doctor["id"]),
+                        use_container_width=True,
+                    ):
+                        st.session_state["pref_doctor"] = (
+                            doctor["id"]
+                        )
+                        go("📅 Appointments")
+
+
+# ======================================================
+# SMART APPOINTMENT BOOKING
 # ======================================================
 
 elif page == "📅 Appointments":
 
     st.header("📅 Smart Appointment Booking")
 
-    if patient_id is None:
-        st.warning("Register a patient first.")
+    if not patient_id:
+        st.warning(
+            "Register and select a patient first."
+        )
         st.stop()
 
-    st.write(f"**Patient:** {patient['name']}")
+    st.write(
+        "**Patient:** " + patient["name"]
+    )
 
-    st.subheader("Step 1 — Patient Concern")
+    guide = {
+        "Kidney concerns": "Nephrology",
+        "Heart concerns": "Cardiology",
+        "Headaches or nervous system": "Neurology",
+        "Bones or joints": "Orthopedics",
+        "Skin or hair": "Dermatology",
+        "Digestive concerns": "Gastroenterology",
+        "Diabetes or thyroid": "Endocrinology",
+        "Breathing concerns": "Pulmonology",
+        "Ear, nose or throat": "ENT",
+        "Eye or vision": "Ophthalmology",
+        "Women's health": "Gynecology",
+        "Mental health": "Psychiatry",
+        "Children's health": "Pediatrics",
+        "General consultation": "General Medicine",
+    }
 
     concern = st.selectbox(
-        "Choose Consultation Type",
-        list(DEPARTMENT_GUIDE.keys()),
+        "What Type of Consultation Do You Need?",
+        list(guide),
     )
-
-    suggested = DEPARTMENT_GUIDE[concern]
 
     st.info(
-        f"Suggested Department: **{suggested}**"
+        "Suggested Department: **"
+        + guide[concern]
+        + "**. This is a navigation aid, not a diagnosis."
     )
 
-    st.subheader("Step 2 — Medical Department")
+    doctors = [dict(x) for x in get_doctors()]
 
-    doctors = as_dicts(get_doctors())
-
-    departments = sorted({
-        doctor["specialization"]
-        for doctor in doctors
+    specialties = sorted({
+        d["specialization"]
+        for d in doctors
     })
+
+    preferred_id = st.session_state.pop(
+        "pref_doctor",
+        None,
+    )
+
+    preferred_doctor = next(
+        (
+            d for d in doctors
+            if d["id"] == preferred_id
+        ),
+        None,
+    )
+
+    preferred_specialty = (
+        preferred_doctor["specialization"]
+        if preferred_doctor
+        else guide[concern]
+    )
 
     department = st.selectbox(
         "Select Department",
-        departments,
+        specialties,
         index=(
-            departments.index(suggested)
-            if suggested in departments else 0
+            specialties.index(preferred_specialty)
+            if preferred_specialty in specialties
+            else 0
         ),
-        key=f"department_{concern}",
+        key=f"booking_department_{concern}_{preferred_id}",
     )
 
-    filtered_doctors = [
-        doctor for doctor in doctors
-        if doctor["specialization"] == department
+    filtered = [
+        d for d in doctors
+        if d["specialization"] == department
     ]
 
-    st.subheader("Step 3 — Choose Doctor")
+    names = {
+        f"{d['name']} · {d['specialization']}": d["id"]
+        for d in filtered
+    }
 
-    if filtered_doctors:
+    options = list(names)
 
-        doctor_options = {
-            f"{d['name']} — {d['specialization']}": d["id"]
-            for d in filtered_doctors
-        }
-
-        doctor_label = st.selectbox(
-            "Doctor Name",
-            list(doctor_options.keys()),
-        )
-
-        doctor_id = doctor_options[doctor_label]
-
-        doctor_data = next(
-            d for d in filtered_doctors
-            if d["id"] == doctor_id
-        )
-
-        with st.container(border=True):
-            photo_col, info_col = st.columns([1, 2])
-
-            with photo_col:
-                st.image(
-                    DOCTOR_IMAGES.get(
-                        department,
-                        DEFAULT_DOCTOR_IMAGE,
-                    ),
-                    use_container_width=True,
-                )
-
-            with info_col:
-                st.subheader(doctor_data["name"])
-                st.write(
-                    f"**Specialization:** {department}"
-                )
-                st.write(
-                    "**Consultation:** Appointment scheduling"
-                )
-                st.caption(
-                    "Illustrative profile image. "
-                    "Doctor and schedule are simulated."
-                )
-
-        st.subheader("Step 4 — Available Slots")
-
-        try:
-            slots = get_available_slots(
-                doctor_id,
-                days=7,
-            )
-        except Exception as exc:
-            slots = []
-            st.error(f"Slot retrieval failed: {exc}")
-
-        if slots:
-
-            slot = st.selectbox(
-                "Appointment Date and Time",
-                slots,
-            )
-
-            with st.container(border=True):
-                st.write(
-                    f"**Patient:** {patient['name']}"
-                )
-                st.write(
-                    f"**Doctor:** {doctor_data['name']}"
-                )
-                st.write(
-                    f"**Department:** {department}"
-                )
-                st.write(
-                    f"**Time:** {slot}"
-                )
-
-                confirmed = st.checkbox(
-                    "Confirm this appointment",
-                )
-
-                if st.button(
-                    "✅ Book Appointment",
-                    type="primary",
-                    disabled=not confirmed,
-                    use_container_width=True,
-                ):
-                    try:
-                        result = book_appointment(
-                            patient_id,
-                            doctor_id,
-                            slot,
-                        )
-
-                        if result_success(result):
-                            success_notification(
-                                "Appointment booked successfully! "
-                                f"{doctor_data['name']} — {slot}"
-                            )
-                        else:
-                            st.error(result_error(result))
-
-                    except Exception as exc:
-                        st.error(
-                            f"Booking failed: {exc}"
-                        )
-        else:
-            st.warning(
-                "No available slots for this doctor."
-            )
-
-    st.divider()
-    st.subheader("Appointment History")
-
-    bookings = as_dicts(
-        get_patient_appointments(patient_id)
+    default_index = next(
+        (
+            i for i, label in enumerate(options)
+            if names[label] == preferred_id
+        ),
+        0,
     )
 
-    show_table(bookings)
+    selected = st.selectbox(
+        "Select Doctor",
+        options,
+        index=default_index,
+    )
+
+    doctor = next(
+        d for d in filtered
+        if d["id"] == names[selected]
+    )
+
+    with st.container(border=True):
+
+        photo_col, info_col = st.columns([1, 2])
+
+        with photo_col:
+            st.image(
+                DOCTOR_IMAGES.get(
+                    department,
+                    DEFAULT_IMAGE,
+                ),
+                use_container_width=True,
+            )
+
+        with info_col:
+            st.subheader(doctor["name"])
+
+            st.write(
+                "**Department:** " + department
+            )
+
+            st.write(
+                "**Patient:** " + patient["name"]
+            )
+
+            st.caption(
+                "Illustrative photo · "
+                "Appointment slots are simulated"
+            )
+
+    slots = get_available_slots(
+        doctor["id"],
+        days=7,
+    )
+
+    if slots:
+
+        slot = st.selectbox(
+            "Available Date and Time",
+            slots,
+        )
+
+        confirm = st.checkbox(
+            "I confirm this appointment selection",
+            key="booking_confirm",
+        )
+
+        if st.button(
+            "✅ Confirm Booking",
+            type="primary",
+            disabled=not confirm,
+            use_container_width=True,
+        ):
+
+            try:
+                result = book_appointment(
+                    patient_id,
+                    doctor["id"],
+                    slot,
+                )
+
+                if successful(result):
+                    announce(
+                        "Appointment booked successfully "
+                        f"with {doctor['name']} on {slot}!"
+                    )
+                else:
+                    st.error(
+                        result.get(
+                            "message",
+                            "Unable to book appointment.",
+                        )
+                    )
+
+            except Exception as exc:
+                st.error(
+                    "Booking failed: " + str(exc)
+                )
+
+    else:
+        st.warning(
+            "No available slots for this doctor."
+        )
+
+    st.subheader("Your Appointments")
+
+    appointments = [
+        dict(x)
+        for x in get_patient_appointments(patient_id)
+    ]
+
+    table(appointments)
 
     active = [
-        b for b in bookings
-        if b.get("status") == "Booked"
+        a for a in appointments
+        if a.get("status") == "Booked"
     ]
 
     if active:
 
         cancel_options = {
-            (
-                f"#{b['id']} — "
-                f"{b.get('doctor_name', 'Doctor')} — "
-                f"{b['appointment_time']}"
-            ): b["id"]
-            for b in active
+            f"#{a['id']} · {a['appointment_time']}": a["id"]
+            for a in active
         }
 
         selected_cancel = st.selectbox(
-            "Select Appointment to Cancel",
-            list(cancel_options.keys()),
+            "Cancel An Appointment",
+            list(cancel_options),
         )
 
-        confirm_cancel = st.checkbox(
-            "Confirm cancellation",
-        )
+        if st.button("Cancel Selected Appointment"):
 
-        if st.button(
-            "❌ Cancel Appointment",
-            disabled=not confirm_cancel,
-        ):
-            try:
-                result = cancel_appointment(
-                    cancel_options[selected_cancel]
+            result = cancel_appointment(
+                cancel_options[selected_cancel]
+            )
+
+            if successful(result):
+                announce(
+                    "Appointment cancelled successfully."
                 )
-
-                if result_success(result):
-                    success_notification(
-                        "Appointment cancelled successfully."
+            else:
+                st.error(
+                    result.get(
+                        "message",
+                        "Cancellation failed.",
                     )
-                else:
-                    st.error(result_error(result))
-
-            except Exception as exc:
-                st.error(str(exc))
+                )
 
 
 # ======================================================
-# MEDICAL RECORDS
+# MEDICAL RECORD MANAGEMENT
 # ======================================================
 
 elif page == "📋 Medical Records":
 
     st.header("📋 Medical Records")
 
-    if patient_id is None:
-        st.warning("Select a patient.")
+    if not patient_id:
+        st.warning("Select a patient first.")
         st.stop()
 
-    st.write(f"**Patient:** {patient['name']}")
+    records = [
+        dict(r)
+        for r in get_medical_history(patient_id)
+    ]
 
-    records = as_dicts(
-        get_medical_history(patient_id)
-    )
+    table(records)
 
-    show_table(records)
+    st.subheader("Add Medical Record")
 
-    st.subheader("➕ Add Medical Record")
-
-    with st.form("add_record", clear_on_submit=True):
+    with st.form("new_record"):
 
         diagnosis = st.text_input(
-            "Diagnosis or Condition",
+            "Diagnosis or Condition"
         )
 
         treatment = st.text_area(
-            "Treatment Details",
+            "Treatment"
         )
 
         notes = st.text_area(
-            "Medical Notes",
+            "Notes"
         )
 
-        save_record = st.form_submit_button(
-            "💾 Save Record",
+        save = st.form_submit_button(
+            "💾 Save Medical Record",
             type="primary",
         )
 
-    if save_record:
+    if save:
+
         if not diagnosis.strip():
-            st.error("Diagnosis is required.")
+            st.error(
+                "Enter a diagnosis or condition."
+            )
         else:
             try:
                 add_medical_record(
                     patient_id,
-                    diagnosis.strip(),
+                    diagnosis,
                     treatment,
                     notes,
                 )
 
-                success_notification(
+                announce(
                     "Medical record saved successfully."
                 )
 
@@ -699,261 +870,233 @@ elif page == "📋 Medical Records":
                 st.error(str(exc))
 
     if records:
-        st.subheader("✏️ Update Medical Record")
 
-        record_options = {
-            f"#{r['id']} — {r['diagnosis']}": r
+        st.subheader("Update Existing Record")
+
+        choices = {
+            f"#{r['id']} · {r['diagnosis']}": r
             for r in records
         }
 
-        selected_record_label = st.selectbox(
-            "Choose Record",
-            list(record_options.keys()),
+        selected = st.selectbox(
+            "Edit Existing Record",
+            list(choices),
         )
 
-        record = record_options[
-            selected_record_label
-        ]
+        record = choices[selected]
 
-        with st.form("update_record"):
+        with st.form("edit_record"):
 
             new_diagnosis = st.text_input(
-                "Diagnosis",
+                "Update Diagnosis",
                 value=record.get("diagnosis") or "",
             )
 
             new_treatment = st.text_area(
-                "Treatment",
+                "Update Treatment",
                 value=record.get("treatment") or "",
             )
 
             new_notes = st.text_area(
-                "Notes",
+                "Update Notes",
                 value=record.get("notes") or "",
             )
 
             update = st.form_submit_button(
-                "Update Record",
-                type="primary",
+                "Save Changes"
             )
 
         if update:
-            if not new_diagnosis.strip():
-                st.error("Diagnosis is required.")
-            else:
-                try:
-                    update_medical_record(
-                        record["id"],
-                        new_diagnosis,
-                        new_treatment,
-                        new_notes,
-                    )
 
-                    success_notification(
-                        "Medical record updated successfully."
-                    )
+            try:
+                update_medical_record(
+                    record["id"],
+                    new_diagnosis,
+                    new_treatment,
+                    new_notes,
+                )
 
-                except Exception as exc:
-                    st.error(str(exc))
+                announce(
+                    "Medical record updated successfully."
+                )
+
+            except Exception as exc:
+                st.error(str(exc))
 
 
 # ======================================================
-# HISTORY SUMMARY
+# AI MEDICAL HISTORY SUMMARY
 # ======================================================
 
 elif page == "🩺 History Summary":
 
     st.header("🩺 AI Medical History Summary")
 
-    if patient_id is None:
-        st.warning("Select a patient.")
+    if not patient_id:
+        st.warning("Select a patient first.")
         st.stop()
 
-    records = as_dicts(
-        get_medical_history(patient_id)
-    )
+    records = get_medical_history(patient_id)
 
-    show_table(records)
+    table(records)
 
     if st.button(
-        "✨ Generate AI Summary",
+        "✨ Generate History Summary",
         type="primary",
         disabled=not bool(records),
     ):
 
-        with st.spinner("Generating summary..."):
+        with st.spinner(
+            "Summarizing medical records..."
+        ):
 
             try:
-                context = generate_history_context(
-                    patient_id
-                )
-
                 prompt = (
-                    "Summarize only the supplied patient "
-                    "medical records. Include documented "
-                    "conditions, treatments and notes. "
-                    "Do not invent missing information, "
-                    "diagnose, or prescribe.\n\n"
-                    + context
+                    "Summarize ONLY the supplied fictional "
+                    "patient history. Do not invent diagnoses, "
+                    "details or prescribe.\n\n"
+                    + generate_history_context(patient_id)
                 )
 
-                summary = generate_ai_response(prompt)
+                summary = generate_ai_response(
+                    prompt
+                )
 
-                st.session_state["summary_result"] = {
-                    "patient_id": patient_id,
-                    "summary": summary,
+                st.session_state["history_summary"] = {
+                    "id": patient_id,
+                    "text": summary,
                 }
 
                 st.toast(
-                    "Summary generated successfully!",
+                    "History summary ready!",
                     icon="✅",
                 )
 
             except Exception as exc:
-                st.error(f"AI summary failed: {exc}")
+                st.error(
+                    "Summary failed: " + str(exc)
+                )
 
-    saved = st.session_state.get("summary_result")
+    saved = st.session_state.get(
+        "history_summary"
+    )
 
-    if saved and saved["patient_id"] == patient_id:
-        st.subheader("Patient History Summary")
-        st.write(saved["summary"])
+    if saved and saved["id"] == patient_id:
+        st.write(saved["text"])
 
 
 # ======================================================
-# MEDICAL RESEARCH
+# MEDICAL INFORMATION SEARCH
 # ======================================================
 
 elif page == "🔎 Medical Research":
 
-    st.header("🔎 Medical Research")
+    st.header("🔎 Trusted Medical Information Search")
 
-    topic = st.text_input(
-        "Search Medical Topic",
-        value="chronic kidney disease",
+    query = st.text_input(
+        "Medical Topic",
+        placeholder="e.g. chronic kidney disease",
     )
 
     if st.button(
-        "🔍 Search Medical Information",
+        "🔍 Search Trusted Sources",
         type="primary",
     ):
 
-        if not topic.strip():
-            st.warning("Enter a medical topic.")
+        if not query.strip():
+            st.warning("Enter a topic.")
+
         else:
             with st.spinner(
-                "Searching trusted sources..."
+                "Searching medical resources..."
             ):
-                try:
-                    result = retrieve_medical_information(
-                        topic
-                    )
 
-                    st.session_state["research_result"] = {
-                        "topic": topic,
-                        "data": result,
-                    }
+                try:
+                    st.session_state["medical_sources"] = (
+                        retrieve_medical_information(
+                            query
+                        )
+                    )
 
                 except Exception as exc:
                     st.error(str(exc))
 
-    saved = st.session_state.get(
-        "research_result"
+    data = st.session_state.get(
+        "medical_sources",
+        {},
     )
 
-    if saved and saved["topic"] == topic:
+    for item in data.get("sources", []):
 
-        sources = saved["data"].get(
-            "sources", []
-        )
+        with st.container(border=True):
 
-        if not sources:
-            st.warning(
-                "No verified medical sources found."
+            st.subheader(
+                item.get(
+                    "title",
+                    "Medical Information",
+                )
             )
 
-        for source in sources:
-            with st.container(border=True):
+            st.write(
+                item.get("content", "")
+            )
 
-                st.subheader(
-                    source.get(
-                        "title",
-                        "Medical Information",
-                    )
-                )
+            url = item.get("url", "")
 
-                st.write(
-                    source.get(
-                        "content",
-                        "No summary available.",
-                    )
-                )
-
-                url = source.get("url", "")
-
-                if url.startswith(
+            if (
+                url.startswith(
                     "https://medlineplus.gov/"
-                ) or url.startswith(
+                )
+                or url.startswith(
                     "https://www.medlineplus.gov/"
-                ):
-                    st.link_button(
-                        "Open Source",
-                        url,
-                    )
+                )
+            ):
+                st.link_button(
+                    "Read Trusted Source",
+                    url,
+                )
+
+    if data and not data.get("sources"):
+        st.info(
+            "No matching verified sources found."
+        )
 
 
 # ======================================================
 # AI HEALTHCARE ASSISTANT
 # ======================================================
 
-elif page == "🤖 AI Healthcare Assistant":
+elif page == "🤖 AI Assistant":
 
-    st.header("🤖 Intelligent Healthcare Assistant")
+    st.header("🤖 AI Healthcare Assistant")
 
-    if patient_id is None:
-        st.warning("Select a patient.")
+    if not patient_id:
+        st.warning("Select a patient first.")
         st.stop()
 
-    examples = {
-        "Kidney Care": (
-            "Summarize the patient's medical history, "
-            "find nephrology appointments, and research "
+    query = st.text_area(
+        "Describe Your Request",
+        value=(
+            "Summarize patient history, "
+            "find a nephrologist, and research "
             "chronic kidney disease."
         ),
-        "Heart Care": (
-            "Review patient history, find cardiology "
-            "appointments, and research heart health."
-        ),
-        "General Care": (
-            "Summarize patient history and find "
-            "general medicine appointments."
-        ),
-        "Custom Request": "",
-    }
-
-    example = st.selectbox(
-        "Try an Example",
-        list(examples.keys()),
-    )
-
-    query = st.text_area(
-        "Healthcare Request",
-        value=examples[example],
-        height=150,
-        key=f"query_{example}",
+        height=130,
     )
 
     if st.button(
         "✨ Run AI Healthcare Agent",
         type="primary",
-        use_container_width=True,
     ):
 
         if not query.strip():
             st.warning("Enter a request.")
+
         else:
             with st.spinner(
-                "Planning and executing healthcare tasks..."
+                "Planning and running agent tools..."
             ):
+
                 try:
                     from healthcare.agent import (
                         run_healthcare_agent,
@@ -964,75 +1107,78 @@ elif page == "🤖 AI Healthcare Assistant":
                         patient_id,
                     )
 
-                    st.session_state["agent_result"] = {
-                        "patient_id": patient_id,
-                        "result": result,
-                    }
+                    st.session_state["agent_output"] = (
+                        result
+                    )
 
                     st.toast(
-                        "Agent execution completed!",
+                        "Agent finished!",
                         icon="✅",
                     )
 
                 except Exception as exc:
                     st.error(
-                        f"Agent execution failed: {exc}"
+                        "Agent failed: " + str(exc)
                     )
 
-    saved = st.session_state.get("agent_result")
+    result = st.session_state.get(
+        "agent_output"
+    )
 
-    if saved and saved["patient_id"] == patient_id:
-
-        result = saved["result"]
+    if result:
 
         st.subheader("Agent Response")
-        st.write(result.get("response", ""))
 
-        with st.expander("Planning Breakdown"):
-            st.write(result.get("plan", ""))
+        st.write(
+            result.get("response", "")
+        )
+
+        with st.expander("Agent Plan"):
+            st.write(
+                result.get("plan", "")
+            )
 
         with st.expander("Execution Trace"):
             st.write(
-                result.get("execution_trace", [])
+                result.get(
+                    "execution_trace",
+                    [],
+                )
             )
 
-        with st.expander("Medical Sources"):
-            st.write(
-                result.get("medical_sources", [])
-            )
-
-    if st.button("📅 Open Appointment Booking"):
-        navigate("📅 Appointments")
+    if st.button("📅 Open Booking"):
+        go("📅 Appointments")
 
 
 # ======================================================
-# FAISS MEMORY
+# FAISS SEMANTIC MEMORY
 # ======================================================
 
 elif page == "🧠 FAISS Memory":
 
-    st.header("🧠 Semantic Patient Memory")
+    st.header("🧠 Patient Semantic Memory")
 
-    if patient_id is None:
-        st.warning("Select a patient.")
+    if not patient_id:
+        st.warning("Select a patient first.")
         st.stop()
 
     query = st.text_input(
-        "Search Patient Memory",
-        placeholder="Example: kidney history",
+        "Search Patient History By Meaning"
     )
 
     if st.button(
-        "🔍 Search Vector Memory",
+        "🔍 Search Memory",
         type="primary",
     ):
 
         if not query.strip():
-            st.warning("Enter a search query.")
+            st.warning("Enter a query.")
+
         else:
             with st.spinner(
-                "Searching vector memory..."
+                "Searching semantic memory..."
             ):
+
                 try:
                     from healthcare.memory import (
                         retrieve_patient_memory,
@@ -1043,44 +1189,43 @@ elif page == "🧠 FAISS Memory":
                         query,
                     )
 
-                    if not matches:
-                        st.info(
-                            "No matching memory found."
-                        )
+                    for item in matches:
 
-                    for index, item in enumerate(
-                        matches, 1
-                    ):
                         with st.container(border=True):
-                            st.subheader(
-                                f"Memory Match {index}"
-                            )
 
                             st.write(
                                 item.get("content", "")
                             )
 
                             similarity = float(
-                                item.get("similarity", 0)
+                                item.get(
+                                    "similarity",
+                                    0,
+                                )
                             )
 
                             st.caption(
                                 f"Similarity: {similarity:.3f}"
                             )
 
+                    if not matches:
+                        st.info(
+                            "No matching memory found."
+                        )
+
                 except Exception as exc:
                     st.error(
-                        f"Memory search failed: {exc}"
+                        "Memory unavailable: " + str(exc)
                     )
 
 
 # ======================================================
-# MONITORING
+# MONITORING AND EVALUATION
 # ======================================================
 
-elif page == "📊 Evaluation & Monitoring":
+elif page == "📊 Monitoring":
 
-    st.header("📊 Evaluation & Monitoring")
+    st.header("📊 Agent Evaluation and Monitoring")
 
     try:
         from healthcare.monitoring import (
@@ -1088,18 +1233,21 @@ elif page == "📊 Evaluation & Monitoring":
             get_monitoring_metrics,
         )
 
-        st.subheader("Agent Monitoring Metrics")
-        st.json(get_monitoring_metrics())
+        st.subheader("Monitoring Metrics")
+
+        st.json(
+            get_monitoring_metrics()
+        )
 
         st.subheader("Execution Logs")
 
-        show_table(
+        table(
             get_agent_logs(limit=100)
         )
 
     except Exception as exc:
         st.warning(
-            f"Monitoring unavailable: {exc}"
+            "Monitoring unavailable: " + str(exc)
         )
 
     try:
@@ -1108,11 +1256,14 @@ elif page == "📊 Evaluation & Monitoring":
         )
 
         st.subheader("Evaluation Metrics")
-        st.json(get_evaluation_metrics())
+
+        st.json(
+            get_evaluation_metrics()
+        )
 
     except Exception as exc:
         st.warning(
-            f"Evaluation unavailable: {exc}"
+            "Evaluation unavailable: " + str(exc)
         )
 
 
@@ -1123,6 +1274,6 @@ elif page == "📊 Evaluation & Monitoring":
 st.divider()
 
 st.caption(
-    "🏥 MediFlow AI | Intelligent Healthcare Management "
-    "| Gemini AI • LangGraph • FAISS • Streamlit"
+    "MediFlow AI · Gemini AI · LangGraph · "
+    "FAISS · Streamlit"
 )
