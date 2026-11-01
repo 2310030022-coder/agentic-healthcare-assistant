@@ -11,3 +11,4 @@ numpy
 requests
 python-dotenv
 pytest
+beautifulsoup4
