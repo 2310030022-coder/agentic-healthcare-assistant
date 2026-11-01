@@ -2,6 +2,12 @@
 import streamlit as st
 import pandas as pd
 
+from healthcare.ui_style import (
+    apply_custom_style,
+    render_hero,
+    render_feature_cards
+)
+
 from healthcare.database import initialize_database
 from healthcare.records import (
     get_patients,
@@ -31,232 +37,400 @@ from healthcare.evaluation import (
 )
 
 
+# --------------------------------------------------
+# PAGE CONFIGURATION
+# --------------------------------------------------
+
 st.set_page_config(
-    page_title="Agentic Healthcare Assistant",
+    page_title="MediFlow AI | Healthcare Assistant",
     page_icon="🏥",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-st.markdown("""
-<style>
-.main-title {
-    font-size: 2.3rem;
-    font-weight: 750;
-    color: #126b8a;
-}
-.subtitle {
-    color: #64748b;
-    font-size: 1rem;
-}
-div[data-testid="stMetric"] {
-    border: 1px solid #dbe5eb;
-    border-radius: 12px;
-    padding: 14px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-
+apply_custom_style()
 initialize_database()
 
+
+# --------------------------------------------------
+# HELPER FUNCTIONS
+# --------------------------------------------------
+
+def section_header(icon, title, description):
+    st.markdown(
+        f"""
+        <div style="
+            background: linear-gradient(110deg,#eaf3ff,#f1edff);
+            border: 1px solid #dce7fb;
+            border-radius: 18px;
+            padding: 20px 24px;
+            margin: 12px 0 24px;
+        ">
+            <h2 style="margin:0;color:#244b9b;">
+                {icon} {title}
+            </h2>
+            <p style="
+                color:#60728f;
+                margin:8px 0 0;
+                font-size:15px;
+            ">{description}</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+def safe_monitor(module, action, function, *args, **kwargs):
+    try:
+        return monitor_execution(
+            module, action, function, *args, **kwargs
+        )
+    except Exception as exc:
+        st.error(f"{action} failed: {exc}")
+        return None
+
+
+def show_dataframe(rows, empty_message="No data available."):
+    if rows:
+        st.dataframe(
+            pd.DataFrame(rows),
+            use_container_width=True,
+            hide_index=True
+        )
+    else:
+        st.info(empty_message)
+
+
+def display_result(result):
+    if isinstance(result, dict):
+        if result.get("success"):
+            st.success(result.get("message", "Action completed."))
+        else:
+            st.error(result.get("message", "Action failed."))
+    else:
+        st.success("Operation completed.")
+
+
+# --------------------------------------------------
+# TOP HEADER
+# --------------------------------------------------
+
 st.markdown(
-    '<div class="main-title">🏥 Agentic Healthcare Assistant</div>',
-    unsafe_allow_html=True
-)
-st.markdown(
-    '<div class="subtitle">'
-    'Gemini AI • LangGraph • FAISS RAG • Medical Task Automation'
-    '</div>',
+    """
+    <div class="main-title">
+        🏥 MediFlow AI
+    </div>
+    <div class="subtitle">
+        Intelligent Healthcare Task Automation Platform
+        • Gemini AI • LangGraph • FAISS RAG
+    </div>
+    """,
     unsafe_allow_html=True
 )
 
 st.info(
-    "Educational demonstration using fictional patient data "
-    "and simulated doctor schedules. Not for diagnosis, "
-    "medical decisions, or real hospital bookings."
+    "🎓 Educational capstone using fictional patients and "
+    "simulated appointments. Not for real medical care, "
+    "diagnosis, or clinical decisions."
 )
 
-patients = get_patients()
-patient_options = {
-    f"{p['name']} (ID: {p['id']})": p["id"]
-    for p in patients
-}
+
+# --------------------------------------------------
+# SIDEBAR
+# --------------------------------------------------
 
 with st.sidebar:
-    st.header("Navigation")
+    st.markdown("## 🏥 MediFlow AI")
+    st.caption("INTELLIGENT HEALTHCARE WORKSPACE")
+    st.divider()
+
     page = st.radio(
-        "Select module",
+        "Explore modules",
         [
-            "Dashboard",
-            "AI Healthcare Assistant",
-            "Appointments",
-            "Medical Records",
-            "FAISS Memory",
-            "Medical Research",
-            "Doctor View",
-            "Evaluation & Monitoring"
+            "🏠 Dashboard",
+            "🤖 AI Healthcare Assistant",
+            "📅 Appointments",
+            "📋 Medical Records",
+            "🧠 FAISS Memory",
+            "🔎 Medical Research",
+            "👨‍⚕️ Doctor View",
+            "📊 Evaluation & Monitoring"
         ]
     )
 
     st.divider()
-    st.subheader("Demo Patient")
+    st.markdown("### 👤 Demo Patient")
 
-    selected_label = st.selectbox(
-        "Choose patient",
+    patients = get_patients()
+
+    patient_options = {
+        f"{p['name']} • ID {p['id']}": p["id"]
+        for p in patients
+    }
+
+    selected_patient = st.selectbox(
+        "Select patient",
         list(patient_options.keys())
     )
 
-    patient_id = patient_options[selected_label]
+    patient_id = patient_options[selected_patient]
+
+    patient = get_patient(patient_id)
+
+    if patient:
+        st.markdown(f"**Name:** {patient['name']}")
+        st.markdown(f"**Age:** {patient['age']} years")
 
     st.caption(
-        "Demo selection only. This is not authentication."
+        "Demo selection is not authentication. "
+        "Use fictional patient information only."
     )
 
+    st.divider()
+    st.caption("✨ Powered by Google Gemini")
 
-if page == "Dashboard":
-    st.header("Healthcare Overview")
+
+# --------------------------------------------------
+# DASHBOARD
+# --------------------------------------------------
+
+if page == "🏠 Dashboard":
+    render_hero()
+
+    section_header(
+        "📊",
+        "Healthcare Overview",
+        "A real-time overview of the fictional patient "
+        "records and simulated appointment system."
+    )
 
     appointments = get_patient_appointments(patient_id)
     history = get_medical_history(patient_id)
 
     active = sum(
-        1 for a in appointments
-        if a["status"] == "Booked"
+        1 for appointment in appointments
+        if appointment.get("status") == "Booked"
     )
 
     c1, c2, c3, c4 = st.columns(4)
 
-    c1.metric("Registered Patients", len(patients))
-    c2.metric("Available Doctors", len(get_doctors()))
-    c3.metric("Patient Records", len(history))
-    c4.metric("Active Appointments", active)
+    c1.metric("👥 Patients", len(patients))
+    c2.metric("👨‍⚕️ Doctors", len(get_doctors()))
+    c3.metric("📋 Medical Records", len(history))
+    c4.metric("📅 Active Bookings", active)
 
-    st.subheader("Selected Patient")
+    st.markdown("### ✨ Explore the Platform")
+    render_feature_cards()
 
-    patient = get_patient(patient_id)
+    left, right = st.columns([1, 1.5])
 
-    if patient:
-        st.write(f"**Name:** {patient['name']}")
-        st.write(f"**Age:** {patient['age']}")
-        st.write(f"**Patient ID:** {patient['id']}")
+    with left:
+        st.markdown("### 👤 Patient Profile")
 
-    st.subheader("Recent Medical Records")
+        with st.container(border=True):
+            st.markdown(f"#### {patient['name']}")
+            st.write(f"**Patient ID:** {patient['id']}")
+            st.write(f"**Age:** {patient['age']} years")
+            st.write("**Account:** Fictional demo patient")
 
-    if history:
-        st.dataframe(
-            pd.DataFrame(history),
-            use_container_width=True,
-            hide_index=True
+    with right:
+        st.markdown("### 📋 Recent Medical History")
+        show_dataframe(
+            history[:5],
+            "No medical history has been recorded."
         )
-    else:
-        st.info("No medical records available.")
+
+    st.markdown("### 📅 Upcoming Appointments")
+
+    booked = [
+        appointment for appointment in appointments
+        if appointment.get("status") == "Booked"
+    ]
+
+    show_dataframe(booked, "No active appointments.")
 
 
-elif page == "AI Healthcare Assistant":
-    st.header("Gemini-Powered Healthcare Agent")
+# --------------------------------------------------
+# AI HEALTHCARE ASSISTANT
+# --------------------------------------------------
 
-    st.write(
-        "Enter a multi-step healthcare request. "
-        "The agent will create a plan, retrieve relevant "
-        "records, search doctor availability, and retrieve "
-        "trusted medical information when requested."
+elif page == "🤖 AI Healthcare Assistant":
+    section_header(
+        "🤖",
+        "Gemini Healthcare Agent",
+        "Describe a multi-step task and explore how "
+        "the agent plans and coordinates healthcare tools."
     )
 
-    example = (
-        "Summarize this patient's medical history, "
-        "find a nephrologist appointment, and search "
-        "for information about chronic kidney disease."
+    st.markdown("### 💬 Ask MediFlow AI")
+
+    examples = {
+        "Kidney Care": (
+            "Summarize this patient's medical history, "
+            "find available nephrologist appointments, "
+            "and research chronic kidney disease."
+        ),
+        "Heart Care": (
+            "Find available cardiology appointments "
+            "and search for trusted information "
+            "about heart disease."
+        ),
+        "Patient History": (
+            "Summarize the selected patient's "
+            "medical history."
+        )
+    }
+
+    selected_example = st.selectbox(
+        "Try an example",
+        list(examples.keys())
     )
 
     query = st.text_area(
-        "Your healthcare request",
-        value=example,
-        height=130
+        "Enter your healthcare request",
+        value=examples[selected_example],
+        height=150
     )
 
-    if st.button("Run Healthcare Agent", type="primary"):
+    if st.button(
+        "✨ Run AI Healthcare Agent",
+        type="primary",
+        use_container_width=True
+    ):
         if not query.strip():
-            st.warning("Please enter a request.")
+            st.warning("Please enter a healthcare request.")
         else:
-            with st.spinner("Executing LangGraph workflow..."):
-                try:
-                    result = monitor_execution(
-                        "LangGraph",
-                        "run_healthcare_agent",
-                        run_healthcare_agent,
-                        query,
-                        patient_id
-                    )
+            with st.spinner(
+                "Gemini is planning and executing your request..."
+            ):
+                result = safe_monitor(
+                    "LangGraph",
+                    "run_healthcare_agent",
+                    run_healthcare_agent,
+                    query,
+                    patient_id
+                )
 
-                    st.session_state["last_agent_result"] = result
-                    st.session_state["last_query"] = query
+                if result is not None:
+                    st.session_state["agent_result"] = result
+                    st.session_state["agent_query"] = query
+                    st.session_state["agent_patient_id"] = patient_id
 
-                except Exception as exc:
-                    st.error(
-                        "Agent execution failed: "
-                        + str(exc)
-                    )
+    result = st.session_state.get("agent_result")
 
-    result = st.session_state.get("last_agent_result")
+    if (
+        result is not None
+        and st.session_state.get("agent_patient_id") == patient_id
+    ):
+        st.markdown("### ✨ AI Response")
 
-    if result:
-        st.subheader("AI Response")
-        st.markdown(result.get("response", ""))
+        with st.container(border=True):
+            st.markdown(result.get("response", ""))
 
-        with st.expander("Agent Planning Breakdown"):
-            st.write(result.get("plan", ""))
+        tab1, tab2, tab3 = st.tabs([
+            "🧩 Agent Plan",
+            "🔍 Execution Trace",
+            "📚 Trusted Sources"
+        ])
 
-        with st.expander("Execution Trace"):
-            for step in result.get("execution_trace", []):
-                st.write("✓", step)
+        with tab1:
+            st.markdown(
+                result.get("plan", "No plan available.")
+            )
 
-        with st.expander("Retrieved Medical Sources"):
+        with tab2:
+            trace = result.get("execution_trace", [])
+
+            if trace:
+                for index, step in enumerate(trace, start=1):
+                    st.write(f"**Step {index}:** {step}")
+            else:
+                st.info("No execution trace available.")
+
+        with tab3:
             sources = result.get("medical_sources", [])
 
             if sources:
                 for source in sources:
                     st.markdown(
-                        f"**{source['title']}**"
+                        f"**[{source['title']}]({source['url']})**"
                     )
-                    st.write(source["url"])
+                    st.caption(source.get("source", "MedlinePlus"))
             else:
-                st.info("No sources retrieved.")
+                st.info("No medical sources retrieved.")
 
-        if st.button("Evaluate This Response"):
-            metrics = evaluate_response(
-                st.session_state.get("last_query", ""),
+        st.markdown("### 📊 Evaluate Agent Response")
+
+        if st.button("Evaluate Response"):
+            evaluation = safe_monitor(
+                "Evaluation",
+                "evaluate_response",
+                evaluate_response,
+                st.session_state.get("agent_query", ""),
                 result.get("response", "")
             )
-            st.json(metrics)
+
+            if evaluation is not None:
+                st.json(evaluation)
+                st.caption(
+                    "These are lexical similarity scores, "
+                    "not clinical accuracy measurements."
+                )
 
 
-elif page == "Appointments":
-    st.header("Doctor Appointment Booking")
+# --------------------------------------------------
+# APPOINTMENT MANAGEMENT
+# --------------------------------------------------
+
+elif page == "📅 Appointments":
+    section_header(
+        "📅",
+        "Smart Appointment Management",
+        "Browse available doctor slots and manage "
+        "fictional patient appointments."
+    )
+
+    st.markdown("### 👨‍⚕️ Find Your Doctor")
 
     doctors = get_doctors()
 
-    doctor_labels = {
+    doctor_options = {
         f"{d['name']} — {d['specialization']}": d["id"]
         for d in doctors
     }
 
     doctor_label = st.selectbox(
-        "Select doctor",
-        list(doctor_labels.keys())
+        "Choose a specialist",
+        list(doctor_options.keys())
     )
 
-    doctor_id = doctor_labels[doctor_label]
+    doctor_id = doctor_options[doctor_label]
 
-    slots = get_available_slots(doctor_id)
+    st.markdown("### 🕒 Available Appointment Slots")
+
+    slots = get_available_slots(doctor_id, days=7)
 
     if slots:
         selected_slot = st.selectbox(
-            "Available appointment slots",
+            "Select date and time",
             slots
         )
 
-        if st.button("Confirm Appointment", type="primary"):
-            result = monitor_execution(
+        st.info(
+            f"Selected doctor: {doctor_label}\n\n"
+            f"Selected slot: {selected_slot}"
+        )
+
+        confirm_booking = st.checkbox(
+            "I confirm this simulated appointment booking."
+        )
+
+        if st.button(
+            "📅 Confirm Appointment",
+            type="primary",
+            disabled=not confirm_booking
+        ):
+            result = safe_monitor(
                 "Appointments",
                 "book_appointment",
                 book_appointment,
@@ -265,89 +439,113 @@ elif page == "Appointments":
                 selected_slot
             )
 
-            if result["success"]:
-                st.success(result["message"])
-                st.rerun()
-            else:
-                st.error(result["message"])
+            if result is not None:
+                display_result(result)
+
+                if result.get("success"):
+                    st.rerun()
     else:
-        st.warning("No available slots found.")
+        st.warning("No appointment slots available.")
 
     st.divider()
-    st.subheader("Patient Appointments")
+    st.markdown("### 📋 My Appointments")
 
     appointments = get_patient_appointments(patient_id)
 
-    if appointments:
-        st.dataframe(
-            pd.DataFrame(appointments),
-            use_container_width=True,
-            hide_index=True
+    show_dataframe(
+        appointments,
+        "No appointments found for this patient."
+    )
+
+    active = [
+        appointment for appointment in appointments
+        if appointment.get("status") == "Booked"
+    ]
+
+    if active:
+        st.markdown("### ❌ Cancel Appointment")
+
+        options = {
+            (
+                f"#{a['id']} — {a['doctor_name']} "
+                f"— {a['appointment_time']}"
+            ): a["id"]
+            for a in active
+        }
+
+        selected_appointment = st.selectbox(
+            "Select appointment",
+            list(options.keys())
         )
 
-        active = [
-            a for a in appointments
-            if a["status"] == "Booked"
-        ]
+        if st.button("Cancel Selected Appointment"):
+            selected_id = options[selected_appointment]
 
-        if active:
-            appointment_ids = {
-                (
-                    f"#{a['id']} — {a['doctor_name']} "
-                    f"({a['appointment_time']})"
-                ): a["id"]
-                for a in active
-            }
-
-            selected = st.selectbox(
-                "Select appointment to cancel",
-                list(appointment_ids.keys())
+            # Only appointment IDs listed for the selected
+            # demo patient are offered in this interface.
+            result = safe_monitor(
+                "Appointments",
+                "cancel_appointment",
+                cancel_appointment,
+                selected_id
             )
 
-            if st.button("Cancel Selected Appointment"):
-                result = monitor_execution(
-                    "Appointments",
-                    "cancel_appointment",
-                    cancel_appointment,
-                    appointment_ids[selected]
-                )
+            if result is not None:
+                display_result(result)
 
-                if result["success"]:
-                    st.success(result["message"])
+                if result.get("success"):
                     st.rerun()
-                else:
-                    st.error(result["message"])
-    else:
-        st.info("No appointments found.")
 
 
-elif page == "Medical Records":
-    st.header("Patient Medical Records")
+# --------------------------------------------------
+# MEDICAL RECORDS
+# --------------------------------------------------
+
+elif page == "📋 Medical Records":
+    section_header(
+        "📋",
+        "Electronic Medical Records",
+        "View, create, and update fictional patient "
+        "medical history for demonstration."
+    )
+
+    st.markdown("### 🩺 Patient History")
 
     history = get_medical_history(patient_id)
 
-    if history:
-        st.dataframe(
-            pd.DataFrame(history),
-            use_container_width=True,
-            hide_index=True
+    show_dataframe(
+        history,
+        "No medical records found."
+    )
+
+    st.markdown("### ➕ Add Medical Record")
+
+    with st.form("new_medical_record"):
+        diagnosis = st.text_input(
+            "Diagnosis",
+            placeholder="Example: Chronic Kidney Disease"
         )
-    else:
-        st.info("No medical history recorded.")
 
-    st.subheader("Add New Medical Record")
+        treatment = st.text_area(
+            "Treatment",
+            placeholder="Enter fictional treatment details"
+        )
 
-    with st.form("add_record"):
-        diagnosis = st.text_input("Diagnosis")
-        treatment = st.text_area("Treatment")
-        notes = st.text_area("Clinical Notes")
+        notes = st.text_area(
+            "Clinical Notes",
+            placeholder="Enter fictional clinical observations"
+        )
 
         submitted = st.form_submit_button(
-            "Save Medical Record"
+            "💾 Save Medical Record",
+            type="primary"
         )
 
-        if submitted:
-            result = monitor_execution(
+    if submitted:
+        if not diagnosis.strip():
+            st.warning("Diagnosis is required.")
+        else:
+            result = safe_monitor(
                 "MedicalRecords",
                 "add_medical_record",
                 add_medical_record,
@@ -357,17 +555,17 @@ elif page == "Medical Records":
                 notes
             )
 
-            if result["success"]:
-                st.success(result["message"])
-                st.rerun()
-            else:
-                st.error(result["message"])
+            if result is not None:
+                display_result(result)
+
+                if result.get("success"):
+                    st.rerun()
 
     if history:
         st.divider()
-        st.subheader("Update Existing Record")
+        st.markdown("### ✏️ Edit Medical Record")
 
-        record_ids = [r["id"] for r in history]
+        record_ids = [record["id"] for record in history]
 
         selected_id = st.selectbox(
             "Select record ID",
@@ -375,28 +573,35 @@ elif page == "Medical Records":
         )
 
         record = next(
-            r for r in history
-            if r["id"] == selected_id
+            item for item in history
+            if item["id"] == selected_id
         )
 
-        with st.form("update_record"):
+        with st.form("edit_medical_record"):
             new_diagnosis = st.text_input(
-                "Update Diagnosis",
-                value=record["diagnosis"]
+                "Diagnosis",
+                value=record.get("diagnosis") or ""
             )
 
             new_treatment = st.text_area(
-                "Update Treatment",
-                value=record["treatment"] or ""
+                "Treatment",
+                value=record.get("treatment") or ""
             )
 
             new_notes = st.text_area(
-                "Update Notes",
-                value=record["notes"] or ""
+                "Notes",
+                value=record.get("notes") or ""
             )
 
-            if st.form_submit_button("Update Record"):
-                result = monitor_execution(
+            update_submitted = st.form_submit_button(
+                "Update Medical Record"
+            )
+
+        if update_submitted:
+            if not new_diagnosis.strip():
+                st.warning("Diagnosis is required.")
+            else:
+                result = safe_monitor(
                     "MedicalRecords",
                     "update_medical_record",
                     update_medical_record,
@@ -406,102 +611,184 @@ elif page == "Medical Records":
                     new_notes
                 )
 
-                if result["success"]:
-                    st.success(result["message"])
-                    st.rerun()
-                else:
-                    st.error(result["message"])
+                if result is not None:
+                    display_result(result)
+
+                    if result.get("success"):
+                        st.rerun()
 
 
-elif page == "FAISS Memory":
-    st.header("Semantic Patient Memory")
+# --------------------------------------------------
+# FAISS SEMANTIC MEMORY
+# --------------------------------------------------
 
-    query = st.text_input(
-        "Search patient history",
-        placeholder="Example: kidney disease treatment"
+elif page == "🧠 FAISS Memory":
+    section_header(
+        "🧠",
+        "AI Semantic Patient Memory",
+        "Search fictional patient records using "
+        "sentence embeddings and FAISS similarity."
     )
 
-    if st.button("Search FAISS Memory"):
-        if not query.strip():
-            st.warning("Enter a search query.")
+    memory_query = st.text_input(
+        "What would you like to find?",
+        placeholder="Example: kidney disease treatment history"
+    )
+
+    if st.button(
+        "🔍 Search Vector Memory",
+        type="primary"
+    ):
+        if not memory_query.strip():
+            st.warning("Please enter a search query.")
         else:
-            with st.spinner("Searching vector memory..."):
-                results = monitor_execution(
+            with st.spinner("Searching semantic memory..."):
+                results = safe_monitor(
                     "FAISS",
                     "retrieve_patient_memory",
                     retrieve_patient_memory,
                     patient_id,
-                    query
+                    memory_query
                 )
 
-            if results:
-                for item in results:
-                    with st.expander(
-                        f"Record #{item['record_id']} "
-                        f"— Similarity {item['similarity']}"
-                    ):
-                        st.text(item["content"])
-            else:
-                st.info("No matching records found.")
+            if results is not None:
+                if results:
+                    for index, item in enumerate(results, start=1):
+                        with st.container(border=True):
+                            st.markdown(
+                                f"#### 🧠 Memory Match {index}"
+                            )
+
+                            st.write(
+                                f"**Similarity:** "
+                                f"{item.get('similarity', 0):.3f}"
+                            )
+
+                            st.text(
+                                item.get("content", "")
+                            )
+                else:
+                    st.info("No matching memory found.")
 
 
-elif page == "Medical Research":
-    st.header("Trusted Medical Information")
+# --------------------------------------------------
+# TRUSTED MEDICAL RESEARCH
+# --------------------------------------------------
 
-    query = st.text_input(
-        "Search disease information",
+elif page == "🔎 Medical Research":
+    section_header(
+        "🔎",
+        "Trusted Medical Research",
+        "Explore health information retrieved "
+        "from MedlinePlus."
+    )
+
+    research_query = st.text_input(
+        "Search medical topics",
         value="chronic kidney disease"
     )
 
-    if st.button("Search MedlinePlus"):
-        with st.spinner("Retrieving medical information..."):
-            result = monitor_execution(
-                "MedicalSearch",
-                "retrieve_medical_information",
-                retrieve_medical_information,
-                query
-            )
-
-        if result["success"]:
-            for source in result["sources"]:
-                st.subheader(source["title"])
-                st.write(source["content"])
-                st.markdown(
-                    f"[Read trusted source]({source['url']})"
-                )
+    if st.button(
+        "📚 Search Medical Information",
+        type="primary"
+    ):
+        if not research_query.strip():
+            st.warning("Please enter a topic.")
         else:
-            st.warning(
-                "No trusted medical results were retrieved."
-            )
+            with st.spinner("Searching MedlinePlus..."):
+                result = safe_monitor(
+                    "MedicalSearch",
+                    "retrieve_medical_information",
+                    retrieve_medical_information,
+                    research_query
+                )
+
+            if result is not None:
+                sources = result.get("sources", [])
+
+                if sources:
+                    st.success(
+                        f"Found {len(sources)} trusted sources."
+                    )
+
+                    for source in sources:
+                        with st.container(border=True):
+                            st.markdown(
+                                f"### 📖 {source['title']}"
+                            )
+
+                            st.write(
+                                source.get(
+                                    "content",
+                                    "No summary available."
+                                )
+                            )
+
+                            st.markdown(
+                                f"[Read on MedlinePlus]"
+                                f"({source['url']})"
+                            )
+                else:
+                    st.warning(
+                        "No verified medical sources were retrieved."
+                    )
 
 
-elif page == "Doctor View":
-    st.header("Doctor Dashboard")
+# --------------------------------------------------
+# DOCTOR DASHBOARD
+# --------------------------------------------------
+
+elif page == "👨‍⚕️ Doctor View":
+    section_header(
+        "👨‍⚕️",
+        "Doctor Workspace",
+        "Review fictional specialists and their "
+        "simulated available appointment slots."
+    )
 
     doctors = get_doctors()
 
+    st.markdown("### 🩺 Available Specialists")
+
     for doctor in doctors:
         with st.expander(
-            f"{doctor['name']} — {doctor['specialization']}"
+            f"👨‍⚕️ {doctor['name']} — "
+            f"{doctor['specialization']}"
         ):
-            st.write(f"Doctor ID: {doctor['id']}")
+            st.write(
+                f"**Doctor ID:** {doctor['id']}"
+            )
 
             slots = get_available_slots(
-                doctor["id"], days=7
+                doctor["id"],
+                days=7
             )
 
             st.metric(
-                "Available Slots (7 days)",
+                "Available Slots",
                 len(slots)
             )
 
             if slots:
-                st.write("Upcoming available slots:")
-                st.write(slots[:10])
+                st.markdown("**Upcoming availability**")
+
+                for slot in slots[:8]:
+                    st.write(f"🕒 {slot}")
+            else:
+                st.info("No slots available.")
 
 
-elif page == "Evaluation & Monitoring":
-    st.header("LLMOps Evaluation Dashboard")
+# --------------------------------------------------
+# EVALUATION AND MONITORING
+# --------------------------------------------------
+
+elif page == "📊 Evaluation & Monitoring":
+    section_header(
+        "📊",
+        "Agent Performance Analytics",
+        "Monitor logged tool executions, response "
+        "evaluation metrics, and system activity."
+    )
 
     monitoring = get_monitoring_metrics()
     evaluation = get_evaluation_metrics()
@@ -509,56 +796,72 @@ elif page == "Evaluation & Monitoring":
     c1, c2, c3, c4 = st.columns(4)
 
     c1.metric(
-        "Tool Calls",
+        "⚙️ Tool Calls",
         monitoring["total_calls"]
     )
+
     c2.metric(
-        "Tool Success Rate",
+        "✅ Success Rate",
         f"{monitoring['success_rate']}%"
     )
+
     c3.metric(
-        "Average Latency",
+        "⏱️ Average Latency",
         f"{monitoring['average_duration_ms']} ms"
     )
+
     c4.metric(
-        "Evaluated Responses",
+        "🧪 Evaluations",
         evaluation["total_evaluations"]
     )
 
-    st.subheader("Evaluation Metrics")
+    st.markdown("### 📈 Response Evaluation")
 
-    st.write(
-        "Average lexical relevance:",
-        evaluation["average_relevance"]
+    col1, col2 = st.columns(2)
+
+    col1.metric(
+        "Lexical Relevance",
+        f"{evaluation['average_relevance']:.3f}"
     )
 
-    st.write(
-        "Average reference similarity:",
-        evaluation["average_reference_similarity"]
+    col2.metric(
+        "Reference Similarity",
+        f"{evaluation['average_reference_similarity']:.3f}"
     )
 
     st.caption(
-        "Lexical overlap metrics do not prove "
-        "medical correctness or factual accuracy."
+        "These automated lexical metrics do not "
+        "establish clinical accuracy."
     )
 
-    st.subheader("Agent Tool Execution Logs")
+    st.markdown("### 📜 Tool Execution Logs")
 
-    logs = get_agent_logs()
+    logs = get_agent_logs(limit=100)
 
-    if logs:
-        st.dataframe(
-            pd.DataFrame(logs),
-            use_container_width=True,
-            hide_index=True
-        )
-    else:
-        st.info("No agent logs recorded yet.")
+    show_dataframe(
+        logs,
+        "No agent execution logs yet."
+    )
 
 
-st.divider()
+# --------------------------------------------------
+# FOOTER
+# --------------------------------------------------
 
-st.caption(
-    "Agentic Healthcare Assistant | Educational Capstone | "
-    "Gemini + LangGraph + FAISS + Streamlit"
+st.markdown("---")
+
+st.markdown(
+    """
+    <div style="
+        text-align:center;
+        padding:22px 10px;
+        color:#64748b;
+        font-size:13px;
+    ">
+        🏥 <b>MediFlow AI</b> — Agentic Healthcare Assistant<br>
+        Built with Gemini AI • LangGraph • FAISS • Streamlit<br>
+        Educational Capstone Project | Fictional Demo Data Only
+    </div>
+    """,
+    unsafe_allow_html=True
 )
