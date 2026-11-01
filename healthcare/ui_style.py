@@ -8,7 +8,8 @@ def apply_custom_style():
         <style>
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
 
-        html, body, [class*="css"], [data-testid="stApp"] {
+        /* GLOBAL WEBSITE */
+        html, body, [class*="css"] {
             font-family: 'DM Sans', sans-serif;
         }
 
@@ -20,6 +21,13 @@ def apply_custom_style():
             color: #182642;
         }
 
+        .block-container {
+            max-width: 1450px;
+            padding-top: 1.8rem;
+            padding-bottom: 3rem;
+        }
+
+        /* SIDEBAR */
         [data-testid="stSidebar"] {
             background: linear-gradient(
                 175deg,
@@ -29,32 +37,82 @@ def apply_custom_style():
             );
         }
 
-        [data-testid="stSidebar"] * {
+        [data-testid="stSidebar"] {
+            color: #ffffff;
+        }
+
+        [data-testid="stSidebar"] h1,
+        [data-testid="stSidebar"] h2,
+        [data-testid="stSidebar"] h3,
+        [data-testid="stSidebar"] p,
+        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+        }
+
+        [data-testid="stSidebar"] .stRadio label {
             color: #ffffff !important;
         }
 
-        [data-testid="stSidebar"] .stRadio label,
-        [data-testid="stSidebar"] .stSelectbox label {
-            font-weight: 600;
+        [data-testid="stSidebar"] [role="radiogroup"] p {
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+        }
+
+        /* PATIENT DROPDOWN FIX */
+        [data-testid="stSidebar"] [data-baseweb="select"] {
+            background: #ffffff !important;
+            border-radius: 12px !important;
+        }
+
+        [data-testid="stSidebar"] [data-baseweb="select"] > div {
+            background: #ffffff !important;
+            border-radius: 12px !important;
         }
 
         [data-testid="stSidebar"] [data-baseweb="select"] * {
-            color: #182642 !important;
+            color: #17324d !important;
+            -webkit-text-fill-color: #17324d !important;
         }
 
-        [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
-            color: #ffffff !important;
+        [data-testid="stSidebar"] [data-baseweb="select"] input {
+            color: #17324d !important;
+            -webkit-text-fill-color: #17324d !important;
+            caret-color: #17324d !important;
         }
 
-        .block-container {
-            max-width: 1450px;
-            padding-top: 1.8rem;
-            padding-bottom: 3rem;
+        [data-testid="stSidebar"] [data-baseweb="select"] svg {
+            color: #17324d !important;
+            fill: #17324d !important;
         }
 
+        [data-baseweb="popover"] {
+            background: #ffffff !important;
+        }
+
+        [data-baseweb="popover"] [role="listbox"] {
+            background: #ffffff !important;
+        }
+
+        [data-baseweb="popover"] [role="option"] {
+            color: #17324d !important;
+            -webkit-text-fill-color: #17324d !important;
+        }
+
+        [data-baseweb="popover"] [role="option"] * {
+            color: #17324d !important;
+            -webkit-text-fill-color: #17324d !important;
+        }
+
+        [data-baseweb="popover"] [aria-selected="true"] {
+            background: #e7f1ff !important;
+        }
+
+        /* HEADINGS */
         h1, h2, h3 {
-            color: #1a3060 !important;
-            font-weight: 800 !important;
+            color: #1a3060;
+            font-weight: 800;
             letter-spacing: -0.5px;
         }
 
@@ -80,6 +138,7 @@ def apply_custom_style():
             margin-bottom: 22px;
         }
 
+        /* HERO BANNER */
         .hero-banner {
             background: linear-gradient(
                 115deg,
@@ -118,6 +177,7 @@ def apply_custom_style():
             color: white;
         }
 
+        /* DASHBOARD METRIC CARDS */
         [data-testid="stMetric"] {
             background: linear-gradient(
                 145deg,
@@ -145,13 +205,15 @@ def apply_custom_style():
             font-weight: 800;
         }
 
-        div.stButton > button[kind="primary"] {
+        /* BUTTONS */
+        div.stButton > button[kind="primary"],
+        div[data-testid="stFormSubmitButton"] button[kind="primary"] {
             background: linear-gradient(
                 110deg,
                 #1677e7,
                 #6c4ce4
             );
-            color: white;
+            color: #ffffff !important;
             border: none;
             border-radius: 13px;
             font-weight: 700;
@@ -165,7 +227,7 @@ def apply_custom_style():
                 #105ec1,
                 #5335c6
             );
-            color: white;
+            color: #ffffff !important;
         }
 
         div.stButton > button[kind="secondary"] {
@@ -176,6 +238,7 @@ def apply_custom_style():
             font-weight: 600;
         }
 
+        /* FORMS */
         div[data-testid="stForm"] {
             background: rgba(255,255,255,0.88);
             border: 1px solid #e0e8fa;
@@ -184,6 +247,7 @@ def apply_custom_style():
             box-shadow: 0 8px 24px rgba(40, 70, 130, 0.05);
         }
 
+        /* EXPANDERS */
         div[data-testid="stExpander"] {
             background: rgba(255,255,255,0.9);
             border: 1px solid #e0e8f7;
@@ -191,33 +255,39 @@ def apply_custom_style():
             overflow: hidden;
         }
 
+        /* TEXT INPUTS */
         div[data-testid="stTextInput"] input,
         div[data-testid="stTextArea"] textarea {
             background: #ffffff;
             border: 1px solid #d4dff1;
             border-radius: 12px;
             color: #182642;
+            -webkit-text-fill-color: #182642;
         }
 
+        /* DATA TABLES */
         div[data-testid="stDataFrame"] {
             border-radius: 16px;
             overflow: hidden;
             border: 1px solid #e0e8f7;
         }
 
+        /* ALERTS */
         [data-testid="stAlert"] {
             border-radius: 14px;
         }
 
+        /* FEATURE CARDS */
         .feature-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns:
+                repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
             margin: 22px 0;
         }
 
         .feature-card {
-            background: white;
+            background: #ffffff;
             border: 1px solid #e3eaf9;
             border-radius: 19px;
             padding: 22px;
@@ -230,6 +300,7 @@ def apply_custom_style():
         }
 
         .feature-card h3 {
+            color: #1a3060;
             font-size: 1rem;
             margin-bottom: 7px;
         }
@@ -251,6 +322,7 @@ def apply_custom_style():
             margin-bottom: 12px;
         }
 
+        /* MOBILE */
         @media (max-width: 700px) {
             .block-container {
                 padding: 1rem;
@@ -297,25 +369,33 @@ def render_feature_cards():
             <div class="feature-card">
                 <div class="feature-icon">🤖</div>
                 <h3>Intelligent AI Agent</h3>
-                <p>Multi-step planning and medical task coordination.</p>
+                <p>
+                    Multi-step planning and medical task coordination.
+                </p>
             </div>
 
             <div class="feature-card">
                 <div class="feature-icon">📅</div>
                 <h3>Smart Appointments</h3>
-                <p>Browse doctors and manage simulated bookings.</p>
+                <p>
+                    Browse doctors and manage simulated bookings.
+                </p>
             </div>
 
             <div class="feature-card">
                 <div class="feature-icon">🧠</div>
                 <h3>Semantic Memory</h3>
-                <p>Find relevant patient context using FAISS.</p>
+                <p>
+                    Find relevant patient context using FAISS.
+                </p>
             </div>
 
             <div class="feature-card">
                 <div class="feature-icon">📊</div>
                 <h3>Agent Analytics</h3>
-                <p>Explore execution traces and evaluation metrics.</p>
+                <p>
+                    Explore execution traces and evaluation metrics.
+                </p>
             </div>
         </div>
         """,
