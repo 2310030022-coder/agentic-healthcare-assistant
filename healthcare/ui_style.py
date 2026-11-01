@@ -2,9 +2,9 @@
 import streamlit as st
 
 
-# ==============================================
-# MEDIFLOW AI - PREMIUM HEALTHCARE UI
-# ==============================================
+# =====================================================
+# PREMIUM MEDIFLOW AI STYLING
+# =====================================================
 
 def apply_custom_style():
     st.markdown(
@@ -12,24 +12,16 @@ def apply_custom_style():
         <style>
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
 
-        /* GLOBAL DESIGN */
-
         html, body, [class*="css"] {
             font-family: 'DM Sans', sans-serif;
         }
 
         .stApp {
             background:
-                radial-gradient(
-                    circle at 95% 8%,
-                    #e9e4ff 0%,
-                    transparent 30%
-                ),
-                radial-gradient(
-                    circle at 5% 85%,
-                    #d9f6ff 0%,
-                    transparent 35%
-                ),
+                radial-gradient(circle at 95% 8%,
+                    #e9e4ff 0%, transparent 30%),
+                radial-gradient(circle at 5% 85%,
+                    #d9f6ff 0%, transparent 35%),
                 linear-gradient(
                     145deg,
                     #f7fbff 0%,
@@ -54,7 +46,6 @@ def apply_custom_style():
                 #33328c 48%,
                 #166e95 100%
             );
-            color: white;
         }
 
         [data-testid="stSidebar"] h1,
@@ -62,15 +53,12 @@ def apply_custom_style():
         [data-testid="stSidebar"] h3,
         [data-testid="stSidebar"] p,
         [data-testid="stSidebar"] label,
-        [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
-            color: #ffffff !important;
-        }
-
+        [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
         [data-testid="stSidebar"] [role="radiogroup"] p {
-            color: #ffffff !important;
+            color: white !important;
         }
 
-        /* FIX PATIENT DROPDOWN */
+        /* PATIENT SELECTOR */
 
         [data-testid="stSidebar"] [data-baseweb="select"],
         [data-testid="stSidebar"] [data-baseweb="select"] > div {
@@ -85,8 +73,8 @@ def apply_custom_style():
         }
 
         [data-testid="stSidebar"] [data-baseweb="select"] svg {
-            fill: #17324d !important;
             color: #17324d !important;
+            fill: #17324d !important;
         }
 
         [data-baseweb="popover"] [role="listbox"] {
@@ -133,21 +121,21 @@ def apply_custom_style():
             margin-bottom: 22px;
         }
 
-        /* HERO BANNER */
+        /* HERO */
 
         .hero-banner {
             background: linear-gradient(
                 115deg,
-                #1964d9 0%,
+                #1964d9,
                 #6547cf 55%,
-                #16a8b6 100%
+                #16a8b6
             );
             border-radius: 24px;
             padding: 32px;
             color: white;
             margin: 12px 0 25px;
-            box-shadow:
-                0 16px 36px rgba(69, 85, 177, 0.18);
+            box-shadow: 0 16px 36px
+                rgba(69, 85, 177, 0.18);
         }
 
         .hero-banner h2 {
@@ -174,19 +162,44 @@ def apply_custom_style():
             color: white;
         }
 
+        /* SECTION HEADERS */
+
+        .section-header {
+            background: linear-gradient(
+                110deg,
+                #eaf3ff,
+                #f1edff
+            );
+            border: 1px solid #dce7fb;
+            border-radius: 18px;
+            padding: 20px 24px;
+            margin: 12px 0 24px;
+        }
+
+        .section-header h2 {
+            margin: 0;
+            color: #244b9b;
+        }
+
+        .section-header p {
+            color: #60728f;
+            margin: 8px 0 0;
+            font-size: 15px;
+        }
+
         /* METRIC CARDS */
 
         [data-testid="stMetric"] {
             background: linear-gradient(
                 145deg,
-                #ffffff 0%,
-                #f3f7ff 100%
+                #ffffff,
+                #f3f7ff
             );
             border: 1px solid #e2e9fb;
             border-radius: 20px;
             padding: 22px;
-            box-shadow:
-                0 8px 24px rgba(30, 66, 127, 0.06);
+            box-shadow: 0 8px 24px
+                rgba(30, 66, 127, 0.06);
         }
 
         [data-testid="stMetricLabel"] {
@@ -214,8 +227,8 @@ def apply_custom_style():
             border-radius: 13px;
             font-weight: 700;
             padding: 0.65rem 1.4rem;
-            box-shadow:
-                0 6px 18px rgba(73, 82, 204, 0.2);
+            box-shadow: 0 6px 18px
+                rgba(73, 82, 204, 0.2);
         }
 
         div.stButton > button[kind="primary"]:hover {
@@ -242,8 +255,8 @@ def apply_custom_style():
             border: 1px solid #e0e8fa;
             border-radius: 20px;
             padding: 20px;
-            box-shadow:
-                0 8px 24px rgba(40, 70, 130, 0.05);
+            box-shadow: 0 8px 24px
+                rgba(40, 70, 130, 0.05);
         }
 
         /* EXPANDERS */
@@ -274,19 +287,21 @@ def apply_custom_style():
             border: 1px solid #e0e8f7;
         }
 
-        /* ALERTS */
-
         [data-testid="stAlert"] {
             border-radius: 14px;
         }
 
-        /* FEATURE CARD CONTAINERS */
+        /* FOOTER */
 
-        div[data-testid="stVerticalBlockBorderWrapper"] {
-            border-radius: 18px;
+        .footer-text {
+            text-align: center;
+            padding: 22px 10px;
+            color: #64748b;
+            font-size: 13px;
+            line-height: 1.8;
         }
 
-        /* MOBILE RESPONSIVENESS */
+        /* MOBILE */
 
         @media (max-width: 700px) {
             .block-container {
@@ -309,9 +324,9 @@ def apply_custom_style():
     )
 
 
-# ==============================================
-# HERO SECTION
-# ==============================================
+# =====================================================
+# HERO BANNER
+# =====================================================
 
 def render_hero():
     st.markdown(
@@ -320,9 +335,7 @@ def render_hero():
             <div class="hero-badge">
                 ✦ AI-POWERED HEALTHCARE PLATFORM
             </div>
-            <h2>
-                Smarter Care. Seamless Coordination.
-            </h2>
+            <h2>Smarter Care. Seamless Coordination.</h2>
             <p>
                 Your intelligent workspace for patient
                 records, appointment management,
@@ -335,9 +348,9 @@ def render_hero():
     )
 
 
-# ==============================================
-# FEATURE CARDS - NATIVE STREAMLIT
-# ==============================================
+# =====================================================
+# INTERACTIVE FEATURE CARDS
+# =====================================================
 
 def render_feature_cards():
 
@@ -346,48 +359,49 @@ def render_feature_cards():
             "icon": "🤖",
             "title": "Intelligent AI Agent",
             "description": (
-                "Plan multi-step healthcare requests "
+                "Plan multi-step healthcare tasks "
                 "using Gemini AI and LangGraph."
             ),
-            "color": "#eaf2ff",
-            "accent": "#2563eb"
+            "page": "🤖 AI Healthcare Assistant",
+            "color": "#eaf2ff"
         },
         {
             "icon": "📅",
             "title": "Smart Appointments",
             "description": (
-                "Explore doctor availability and "
-                "manage simulated appointments."
+                "Choose a medical department and "
+                "book simulated appointments."
             ),
-            "color": "#f1eaff",
-            "accent": "#7c3aed"
+            "page": "📅 Appointments",
+            "color": "#f1eaff"
         },
         {
             "icon": "🧠",
             "title": "Semantic Memory",
             "description": (
-                "Retrieve fictional patient history "
-                "using FAISS vector search."
+                "Search fictional patient records "
+                "with FAISS vector retrieval."
             ),
-            "color": "#e4fbf7",
-            "accent": "#0f9b8e"
+            "page": "🧠 FAISS Memory",
+            "color": "#e4fbf7"
         },
         {
             "icon": "📊",
             "title": "Agent Analytics",
             "description": (
-                "Review execution traces, logs, "
-                "and evaluation metrics."
+                "Explore agent logs, execution "
+                "traces, and evaluation metrics."
             ),
-            "color": "#fff2e5",
-            "accent": "#e07824"
+            "page": "📊 Evaluation & Monitoring",
+            "color": "#fff2e5"
         }
     ]
 
     columns = st.columns(4, gap="medium")
 
-    for column, feature in zip(columns, features):
-
+    for index, (column, feature) in enumerate(
+        zip(columns, features)
+    ):
         with column:
             with st.container(border=True):
 
@@ -395,14 +409,13 @@ def render_feature_cards():
                     f"""
                     <div style="
                         background:{feature['color']};
-                        padding:14px;
+                        padding:16px;
                         border-radius:12px;
                         text-align:center;
+                        font-size:32px;
                         margin-bottom:12px;
                     ">
-                        <span style="font-size:32px;">
-                            {feature['icon']}
-                        </span>
+                        {feature['icon']}
                     </div>
                     """,
                     unsafe_allow_html=True
@@ -412,16 +425,12 @@ def render_feature_cards():
                     f"#### {feature['title']}"
                 )
 
-                st.write(feature["description"])
+                st.caption(feature["description"])
 
-                st.markdown(
-                    f"""
-                    <div style="
-                        height:5px;
-                        background:{feature['accent']};
-                        border-radius:8px;
-                        margin-top:12px;
-                    "></div>
-                    """,
-                    unsafe_allow_html=True
-                )
+                if st.button(
+                    "Open Module →",
+                    key=f"feature_open_{index}",
+                    use_container_width=True
+                ):
+                    st.session_state.current_page = feature["page"]
+                    st.rerun()
