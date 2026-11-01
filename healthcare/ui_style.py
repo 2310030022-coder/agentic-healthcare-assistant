@@ -1,335 +1,255 @@
 
 import streamlit as st
-from html import escape
 
-
-# =====================================================
-# GLOBAL WEBSITE STYLING
-# =====================================================
 
 def apply_custom_style():
+    st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-    st.markdown(
-        """
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
 
-        html, body, [class*="css"] {
-            font-family: 'Inter', sans-serif;
-        }
+    .stApp {
+        background: linear-gradient(
+            125deg,
+            #f4faff 0%,
+            #f8f5ff 55%,
+            #eefaf8 100%
+        );
+        color: #142c4d;
+    }
 
-        .stApp {
-            background:
-                radial-gradient(
-                    circle at 95% 5%,
-                    #e7e1ff 0%,
-                    transparent 35%
-                ),
-                radial-gradient(
-                    circle at 5% 90%,
-                    #dff6ff 0%,
-                    transparent 40%
-                ),
-                linear-gradient(
-                    135deg,
-                    #f8fbff,
-                    #f6f4ff
-                );
+    .block-container {
+        max-width: 1450px;
+        padding-top: 1.5rem;
+        padding-bottom: 3rem;
+    }
 
-            color: #172b4d;
-        }
+    h1, h2, h3 {
+        color: #173d76;
+        font-weight: 800;
+    }
 
+    /* SIDEBAR */
+
+    [data-testid="stSidebar"] {
+        background: linear-gradient(
+            170deg,
+            #102c67 0%,
+            #2546a2 48%,
+            #087b9b 100%
+        );
+    }
+
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3,
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
+        color: #ffffff !important;
+    }
+
+    [data-testid="stSidebar"] h1 {
+        font-size: 1.8rem !important;
+        font-weight: 800 !important;
+    }
+
+    [data-testid="stSidebar"] [role="radiogroup"] label {
+        padding: 7px 6px;
+        border-radius: 9px;
+    }
+
+    [data-testid="stSidebar"] [role="radiogroup"] p {
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        color: #ffffff !important;
+        line-height: 1.45 !important;
+    }
+
+    [data-testid="stSidebar"] [role="radiogroup"] label:hover {
+        background: rgba(255,255,255,0.14);
+    }
+
+    [data-testid="stSidebar"] [data-baseweb="radio"] {
+        accent-color: #55f2d5;
+    }
+
+    [data-testid="stSidebar"] hr {
+        border-color: rgba(255,255,255,0.25);
+    }
+
+    /* PATIENT DROPDOWN */
+
+    [data-testid="stSidebar"] [data-baseweb="select"] > div {
+        background: #ffffff !important;
+        border: 2px solid #bce9ff !important;
+        border-radius: 12px !important;
+        min-height: 48px;
+    }
+
+    [data-testid="stSidebar"] [data-baseweb="select"] * {
+        color: #173456 !important;
+        -webkit-text-fill-color: #173456 !important;
+    }
+
+    [data-testid="stSidebar"] [data-baseweb="select"] svg {
+        fill: #173456 !important;
+    }
+
+    [data-baseweb="popover"] [role="option"],
+    [data-baseweb="popover"] [role="option"] * {
+        color: #173456 !important;
+        -webkit-text-fill-color: #173456 !important;
+    }
+
+    /* ALL BUTTONS */
+
+    div.stButton > button {
+        min-height: 46px;
+        border-radius: 12px !important;
+        font-size: 15px !important;
+        font-weight: 750 !important;
+        transition: all 0.15s ease;
+    }
+
+    div.stButton > button[kind="primary"] {
+        background: linear-gradient(
+            100deg,
+            #146ce4,
+            #6744dc
+        ) !important;
+        color: #ffffff !important;
+        border: none !important;
+    }
+
+    div.stButton > button[kind="secondary"] {
+        background: #ffffff !important;
+        color: #194c9b !important;
+        border: 2px solid #a9c7f5 !important;
+    }
+
+    div.stButton > button[kind="secondary"]:hover {
+        background: #eaf2ff !important;
+        color: #143d80 !important;
+        border-color: #3478e0 !important;
+    }
+
+    div.stButton > button:disabled {
+        opacity: 0.65;
+    }
+
+    /* SIDEBAR REGISTRATION BUTTON */
+
+    [data-testid="stSidebar"] div.stButton > button {
+        background: #ffffff !important;
+        color: #123f85 !important;
+        border: 2px solid #c1e9ff !important;
+        font-size: 15px !important;
+        font-weight: 800 !important;
+        min-height: 50px;
+    }
+
+    [data-testid="stSidebar"] div.stButton > button p {
+        color: #123f85 !important;
+        font-weight: 800 !important;
+    }
+
+    [data-testid="stSidebar"] div.stButton > button:hover {
+        background: #dff7ff !important;
+    }
+
+    /* METRICS */
+
+    [data-testid="stMetric"] {
+        background: #ffffff;
+        border: 1px solid #dbe7f8;
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(20,60,130,0.06);
+    }
+
+    [data-testid="stMetricValue"] {
+        color: #185bc4;
+        font-weight: 800;
+    }
+
+    /* INPUTS */
+
+    [data-testid="stTextInput"] input,
+    [data-testid="stTextArea"] textarea,
+    [data-testid="stNumberInput"] input {
+        background: #ffffff !important;
+        color: #183656 !important;
+        border-radius: 10px !important;
+        border: 1px solid #b9cce8 !important;
+    }
+
+    /* FORMS */
+
+    [data-testid="stForm"] {
+        background: rgba(255,255,255,0.95);
+        border: 1px solid #d7e5f8;
+        border-radius: 18px;
+        padding: 20px;
+    }
+
+    /* ALERTS */
+
+    [data-testid="stAlert"] {
+        border-radius: 14px;
+        font-weight: 500;
+    }
+
+    /* DATA TABLES */
+
+    [data-testid="stDataFrame"] {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    /* FEATURE CARDS */
+
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        border-radius: 18px;
+    }
+
+    @media (max-width: 768px) {
         .block-container {
-            max-width: 1450px;
-            padding-top: 2rem;
-            padding-bottom: 3rem;
+            padding: 1rem;
         }
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-        /* HEADINGS */
-
-        h1, h2, h3 {
-            color: #17356c;
-            font-weight: 800;
-        }
-
-        h1 {
-            letter-spacing: -1px;
-        }
-
-        /* SIDEBAR */
-
-        [data-testid="stSidebar"] {
-            background: linear-gradient(
-                175deg,
-                #14275f 0%,
-                #32318b 50%,
-                #146c94 100%
-            );
-        }
-
-        [data-testid="stSidebar"] h1,
-        [data-testid="stSidebar"] h2,
-        [data-testid="stSidebar"] h3,
-        [data-testid="stSidebar"] p,
-        [data-testid="stSidebar"] label,
-        [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
-        [data-testid="stSidebar"] [role="radiogroup"] p {
-            color: #ffffff !important;
-        }
-
-        [data-testid="stSidebar"] hr {
-            border-color: rgba(255,255,255,0.2);
-        }
-
-        /* SIDEBAR PATIENT DROPDOWN */
-
-        [data-testid="stSidebar"] [data-baseweb="select"],
-        [data-testid="stSidebar"] [data-baseweb="select"] > div {
-            background: white !important;
-            border-radius: 12px !important;
-        }
-
-        [data-testid="stSidebar"] [data-baseweb="select"] *,
-        [data-testid="stSidebar"] [data-baseweb="select"] input {
-            color: #163253 !important;
-            -webkit-text-fill-color: #163253 !important;
-        }
-
-        [data-testid="stSidebar"] [data-baseweb="select"] svg {
-            color: #163253 !important;
-            fill: #163253 !important;
-        }
-
-        [data-baseweb="popover"] [role="listbox"] {
-            background: #ffffff !important;
-        }
-
-        [data-baseweb="popover"] [role="option"],
-        [data-baseweb="popover"] [role="option"] * {
-            color: #163253 !important;
-            -webkit-text-fill-color: #163253 !important;
-        }
-
-        [data-baseweb="popover"] [aria-selected="true"] {
-            background: #e8f1ff !important;
-        }
-
-        /* HERO BANNER */
-
-        .hero-banner {
-            background: linear-gradient(
-                115deg,
-                #1769dd,
-                #6549d8 55%,
-                #10a7b8
-            );
-
-            padding: 35px;
-            border-radius: 24px;
-            color: white;
-
-            box-shadow:
-                0 15px 35px rgba(55,80,170,0.2);
-
-            margin-bottom: 30px;
-        }
-
-        .hero-banner h2 {
-            color: white !important;
-            font-size: 2rem;
-            margin-bottom: 12px;
-        }
-
-        .hero-banner p {
-            color: #f0f5ff !important;
-            font-size: 1.05rem;
-            line-height: 1.7;
-        }
-
-        .hero-badge {
-            display: inline-block;
-            background: rgba(255,255,255,0.2);
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 18px;
-        }
-
-        /* METRIC CARDS */
-
-        [data-testid="stMetric"] {
-            background: linear-gradient(
-                145deg,
-                #ffffff,
-                #f1f6ff
-            );
-
-            border: 1px solid #e0e8fa;
-            border-radius: 18px;
-            padding: 22px;
-
-            box-shadow:
-                0 8px 25px rgba(35,65,125,0.07);
-        }
-
-        [data-testid="stMetricValue"] {
-            color: #2559c2;
-            font-weight: 800;
-        }
-
-        /* BUTTONS */
-
-        div.stButton > button {
-            border-radius: 12px;
-            font-weight: 700;
-            transition: all 0.2s ease;
-        }
-
-        div.stButton > button[kind="primary"] {
-            background: linear-gradient(
-                110deg,
-                #1675e8,
-                #7146e3
-            );
-
-            color: white !important;
-            border: none;
-
-            box-shadow:
-                0 7px 20px rgba(75,70,200,0.2);
-        }
-
-        div.stButton > button[kind="primary"]:hover {
-            background: linear-gradient(
-                110deg,
-                #105ec2,
-                #5c35c5
-            );
-        }
-
-        div.stButton > button[kind="secondary"] {
-            background: #ffffff;
-            color: #2454a3;
-            border: 1px solid #cddcf7;
-        }
-
-        div.stButton > button[kind="secondary"]:hover {
-            background: #edf4ff;
-            border-color: #83a6ed;
-        }
-
-        /* FEATURE CARD CONTAINERS */
-
-        [data-testid="stVerticalBlockBorderWrapper"] {
-            border-radius: 18px;
-        }
-
-        /* INPUT FIELDS */
-
-        div[data-testid="stTextInput"] input,
-        div[data-testid="stTextArea"] textarea {
-            border-radius: 12px;
-            background: #ffffff;
-            color: #172b4d;
-            border: 1px solid #d3dff3;
-        }
-
-        /* FORMS */
-
-        [data-testid="stForm"] {
-            background: rgba(255,255,255,0.9);
-            border: 1px solid #e0e8f8;
-            border-radius: 20px;
-            padding: 20px;
-        }
-
-        /* DATAFRAMES */
-
-        [data-testid="stDataFrame"] {
-            border-radius: 15px;
-            overflow: hidden;
-        }
-
-        /* ALERTS */
-
-        [data-testid="stAlert"] {
-            border-radius: 14px;
-        }
-
-        /* FOOTER */
-
-        .footer {
-            text-align: center;
-            padding: 25px;
-            color: #70809b;
-            font-size: 13px;
-            line-height: 1.9;
-        }
-
-        /* RESPONSIVE */
-
-        @media (max-width: 768px) {
-
-            .block-container {
-                padding: 1rem;
-            }
-
-            .hero-banner {
-                padding: 22px;
-            }
-
-            .hero-banner h2 {
-                font-size: 1.5rem;
-            }
-        }
-
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-# =====================================================
-# HERO BANNER
-# =====================================================
 
 def render_hero():
+    # Native Streamlit components prevent raw HTML display.
 
-    st.markdown(
-        """
-        <div class="hero-banner">
+    with st.container(border=True):
+        st.caption("✨ INTELLIGENT HEALTHCARE WORKSPACE")
 
-            <div class="hero-badge">
-                ✨ AI-POWERED HEALTHCARE PLATFORM
-            </div>
+        st.title("Smarter Care. Seamless Coordination.")
 
-            <h2>
-                Smarter Care. Seamless Coordination.
-            </h2>
+        st.write(
+            "An interactive healthcare workflow demonstration "
+            "for managing fictional patients, exploring medical "
+            "departments, scheduling simulated appointments, "
+            "reviewing medical histories, and researching "
+            "trusted health information."
+        )
 
-            <p>
-                Manage fictional patient records,
-                explore medical departments,
-                discover available appointments,
-                summarize medical histories,
-                and search trusted healthcare information.
-            </p>
+        st.markdown(
+            "**Gemini AI  •  LangGraph  •  FAISS  •  Streamlit**"
+        )
 
-            <p>
-                Powered by Gemini AI, LangGraph,
-                FAISS and Streamlit.
-            </p>
+        st.info(
+            "Clinical-style educational prototype. "
+            "Not approved for real patient care."
+        )
 
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-# =====================================================
-# INTERACTIVE FEATURE CARDS
-# =====================================================
 
 def render_feature_cards():
 
@@ -338,91 +258,63 @@ def render_feature_cards():
             "icon": "📅",
             "title": "Smart Appointments",
             "description": (
-                "Choose a department, select a doctor, "
-                "and confirm a simulated appointment."
+                "Select a department, choose a doctor "
+                "and confirm a simulated booking."
             ),
-            "page": "📅 Appointments",
-            "color": "#e9f1ff"
+            "page": "📅 Appointments"
         },
         {
             "icon": "📋",
             "title": "Medical Records",
             "description": (
-                "Add and update fictional patient "
+                "Add or update patient history, "
                 "diagnoses, treatments and notes."
             ),
-            "page": "📋 Medical Records",
-            "color": "#f1eaff"
+            "page": "📋 Medical Records"
         },
         {
             "icon": "🩺",
             "title": "History Summary",
             "description": (
-                "Retrieve patient medical history "
-                "and generate an AI summary."
+                "Retrieve existing records and "
+                "generate an AI history summary."
             ),
-            "page": "🩺 History Summary",
-            "color": "#e2faf3"
+            "page": "🩺 History Summary"
         },
         {
             "icon": "🔎",
             "title": "Medical Research",
             "description": (
-                "Search trusted educational "
-                "medical information sources."
+                "Explore trusted educational "
+                "medical information."
             ),
-            "page": "🔎 Medical Research",
-            "color": "#fff2e2"
+            "page": "🔎 Medical Research"
         }
     ]
 
-    columns = st.columns(
-        4,
-        gap="medium"
-    )
+    columns = st.columns(4, gap="medium")
 
     for index, feature in enumerate(features):
-
         with columns[index]:
-
             with st.container(border=True):
 
                 st.markdown(
-                    f"""
-                    <div style="
-                        background:{feature['color']};
-                        border-radius:14px;
-                        padding:20px;
-                        text-align:center;
-                        font-size:36px;
-                        margin-bottom:15px;
-                    ">
-                        {feature['icon']}
-                    </div>
-                    """,
-                    unsafe_allow_html=True
+                    f"## {feature['icon']}"
                 )
 
                 st.markdown(
-                    f"#### {escape(feature['title'])}"
+                    f"#### {feature['title']}"
                 )
 
-                st.caption(
-                    feature["description"]
-                )
+                st.write(feature["description"])
 
                 if st.button(
                     "Open Module →",
                     key=f"feature_card_{index}",
                     use_container_width=True
                 ):
-
-                    # Do not directly modify the sidebar
-                    # radio widget after it has been created.
-                    # app.py reads this on the next rerun.
-
+                    # Defer sidebar navigation until next run.
                     st.session_state["_next_page"] = (
                         feature["page"]
                     )
-
                     st.rerun()
