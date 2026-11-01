@@ -1,5 +1,8 @@
 
-from healthcare.config import generate_ai_response
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import quote_plus
+
 from healthcare.records import generate_history_context
 from healthcare.appointments import (
     get_doctors,
@@ -8,56 +11,106 @@ from healthcare.appointments import (
 
 
 DEPARTMENT_KEYWORDS = {
-    "Nephrology": [
-        "kidney", "renal", "urinary", "bladder",
-    ],
-    "Cardiology": [
-        "heart", "cardiac", "palpitation",
-    ],
-    "Neurology": [
-        "brain", "headache", "migraine", "nerve",
-    ],
-    "Orthopedics": [
-        "bone", "joint", "fracture", "knee",
-    ],
-    "Dermatology": [
-        "skin", "hair", "rash", "acne",
-    ],
-    "Gastroenterology": [
-        "stomach", "digestive", "gastric",
-    ],
-    "Endocrinology": [
-        "diabetes", "thyroid", "hormone",
-    ],
-    "Pulmonology": [
-        "lung", "breathing", "asthma",
-    ],
-    "Ophthalmology": [
-        "eye", "vision",
-    ],
-    "ENT": [
-        "ear", "nose", "throat",
-    ],
-    "Gynecology": [
-        "menstrual", "pregnancy", "gynecology",
-    ],
-    "Psychiatry": [
-        "anxiety", "depression", "psychiatry",
-    ],
-    "Pediatrics": [
-        "child", "pediatric",
-    ],
+    "Nephrology": ["kidney", "renal", "bladder", "urinary"],
+    "Cardiology": ["heart", "cardiac", "palpitation"],
+    "Neurology": ["brain", "headache", "migraine", "nerve"],
+    "Orthopedics": ["bone", "joint", "fracture", "knee"],
+    "Dermatology": ["skin", "hair", "rash", "acne"],
+    "Gastroenterology": ["stomach", "digestive", "gastric"],
+    "Endocrinology": ["diabetes", "thyroid", "hormone"],
+    "Pulmonology": ["lung", "breathing", "asthma"],
+    "Ophthalmology": ["eye", "vision"],
+    "ENT": ["ear", "nose", "throat"],
+    "Gynecology": ["menstrual", "pregnancy", "gynecology"],
+    "Psychiatry": ["anxiety", "depression", "psychiatry"],
+    "Pediatrics": ["child", "pediatric"],
 }
 
 
 def detect_department(query):
-    query = query.lower()
+    query = str(query).lower()
 
     for department, keywords in DEPARTMENT_KEYWORDS.items():
         if any(word in query for word in keywords):
             return department
 
     return "General Medicine"
+
+
+def google_search(query, max_results=5):
+    """
+    Retrieve Google Search result links.
+    Google may block automated scraping, so failures
+    are handled without crashing the application.
+    """
+    results = []
+
+    url = (
+        "https://www.google.com/search?q="
+        + quote_plus(query)
+    )
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 "
+            "(Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 "
+            "Chrome/120.0 Safari/537.36"
+        )
+    }
+
+    try:
+        response = requests.get(
+            url,
+            headers=headers,
+            timeout=10,
+        )
+
+        response.raise_for_status()
+
+        soup = BeautifulSoup(
+            response.text,
+            "html.parser",
+        )
+
+        for heading in soup.select("h3"):
+            anchor = heading.find_parent("a")
+
+            if not anchor:
+                continue
+
+            title = heading.get_text(
+                " ",
+                strip=True,
+            )
+
+            link = anchor.get("href", "")
+
+            if link.startswith("/url?q="):
+                link = link.split("/url?q=", 1)[1].split("&", 1)[0]
+
+            if not link.startswith("http"):
+                continue
+
+            if "google.com" in link:
+                continue
+
+            if not any(
+                item["url"] == link
+                for item in results
+            ):
+                results.append({
+                    "title": title,
+                    "url": link,
+                })
+
+            if len(results) >= max_results:
+                break
+
+    except requests.RequestException:
+        pass
+
+    return results
 
 
 def run_healthcare_agent(user_query, patient_id=None):
@@ -72,38 +125,33 @@ def run_healthcare_agent(user_query, patient_id=None):
         }
 
     plan = [
-        "Understand patient request",
-        "Retrieve relevant patient history",
-        "Find appropriate department",
-        "Check doctor appointment availability",
-        "Generate response using Gemini AI",
+        "Understand the healthcare request",
+        "Retrieve patient history",
+        "Identify the relevant department",
+        "Find matching doctors and appointment slots",
+        "Search Google for healthcare resources",
+        "Present results",
     ]
 
     trace = []
     department = detect_department(user_query)
 
-    # -----------------------------------------
-    # PATIENT HISTORY
-    # -----------------------------------------
-
-    history = "No patient history provided."
+    # Patient history
+    history = "No patient history is available."
 
     if patient_id is not None:
         try:
-            history = generate_history_context(patient_id)
-            trace.append(
-                "Patient medical history retrieved"
-            )
-        except Exception as exc:
-            trace.append(
-                "Patient history unavailable: "
-                + str(exc)[:150]
-            )
+            result = generate_history_context(patient_id)
 
-    # -----------------------------------------
-    # DOCTOR AVAILABILITY
-    # -----------------------------------------
+            if result:
+                history = str(result)
 
+            trace.append("Patient history retrieved")
+
+        except Exception:
+            trace.append("Patient history unavailable")
+
+    # Doctors
     doctor_details = []
 
     try:
@@ -112,110 +160,110 @@ def run_healthcare_agent(user_query, patient_id=None):
             for doctor in get_doctors()
         ]
 
-        matched_doctors = [
+        matched = [
             doctor
             for doctor in doctors
-            if doctor["specialization"] == department
+            if doctor.get("specialization") == department
         ]
 
-        for doctor in matched_doctors[:5]:
+        for doctor in matched[:5]:
             try:
-                slots = get_available_slots(
-                    doctor["id"],
-                    days=7,
+                slots = list(
+                    get_available_slots(
+                        doctor["id"],
+                        days=7,
+                    )
                 )
+            except Exception:
+                slots = []
 
-                doctor_details.append({
-                    "doctor": doctor["name"],
-                    "department": department,
-                    "available_slots": list(slots)[:5],
-                })
+            doctor_details.append({
+                "doctor": doctor["name"],
+                "department": department,
+                "available_slots": slots[:5],
+            })
 
-            except Exception as exc:
-                trace.append(
-                    f"Availability check failed for "
-                    f"{doctor['name']}: {str(exc)[:100]}"
+        trace.append("Doctor availability checked")
+
+    except Exception:
+        trace.append("Doctor lookup unavailable")
+
+    # Google Search
+    sources = google_search(
+        user_query + " medical information",
+        max_results=5,
+    )
+
+    trace.append(
+        f"Google Search returned {len(sources)} links"
+    )
+
+    lines = [
+        "### Healthcare Request",
+        user_query,
+        "",
+        "### Suggested Department",
+        department,
+        "",
+        "### Patient History",
+        history,
+        "",
+        "### Matching Doctors",
+    ]
+
+    if doctor_details:
+        for doctor in doctor_details:
+            lines.append(
+                f"**{doctor['doctor']}** — "
+                f"{doctor['department']}"
+            )
+
+            slots = doctor["available_slots"]
+
+            if slots:
+                lines.append(
+                    "Available slots: "
+                    + ", ".join(str(s) for s in slots[:3])
                 )
+    else:
+        lines.append("No matching doctors found.")
 
-        trace.append(
-            f"Checked {len(matched_doctors)} "
-            f"doctors in {department}"
+    lines.extend([
+        "",
+        "### Google Search Results",
+    ])
+
+    if sources:
+        for source in sources:
+            lines.append(
+                f"- [{source['title']}]({source['url']})"
+            )
+    else:
+        lines.append(
+            "Google results could not be retrieved. "
+            "Use the Google Search link below."
         )
 
-    except Exception as exc:
-        trace.append(
-            "Doctor directory unavailable: "
-            + str(exc)[:150]
-        )
+    google_url = (
+        "https://www.google.com/search?q="
+        + quote_plus(user_query + " health information")
+    )
 
-    # -----------------------------------------
-    # GEMINI PROMPT
-    # -----------------------------------------
+    lines.append(
+        f"[Open Google Search]({google_url})"
+    )
 
-    prompt = f"""
-You are MediFlow AI, a helpful healthcare information
-and appointment management assistant.
-
-USER REQUEST:
-{user_query}
-
-SUGGESTED DEPARTMENT:
-{department}
-
-PATIENT MEDICAL HISTORY:
-{history}
-
-DOCTOR APPOINTMENT INFORMATION:
-{doctor_details}
-
-INSTRUCTIONS:
-1. Answer the user's question clearly.
-2. Summarize documented medical history if requested.
-3. Explain medical topics in understandable language.
-4. Mention relevant available doctors when useful.
-5. Never invent patient records or appointment slots.
-6. Never claim an appointment was booked.
-7. Do not provide a definitive diagnosis.
-8. Do not prescribe medication.
-9. Recommend professional evaluation when appropriate.
-10. For emergencies, recommend urgent medical attention.
-
-Keep the answer helpful and organized.
-"""
-
-    # -----------------------------------------
-    # GEMINI RESPONSE
-    # -----------------------------------------
-
-    try:
-        response = generate_ai_response(prompt)
-
-        trace.append(
-            "Gemini AI generated response successfully"
-        )
-
-    except Exception as exc:
-        # Return a readable message rather than
-        # crashing the entire Streamlit application.
-        error_message = str(exc)
-
-        trace.append(
-            "Gemini generation unavailable: "
-            + error_message[:200]
-        )
-
-        response = (
-            "Gemini AI is currently unavailable.\n\n"
-            + error_message
-            + "\n\nYou can still use patient records, "
-            "doctor selection, and appointment booking."
-        )
+    lines.append(
+        "\nSearch results are external references, "
+        "not verified medical advice."
+    )
 
     return {
-        "response": response,
+        "response": "\n\n".join(lines),
         "plan": plan,
         "execution_trace": trace,
-        "medical_sources": [],
+        "medical_sources": sources,
         "department": department,
         "doctors": doctor_details,
+        "ai_success": False,
     }
