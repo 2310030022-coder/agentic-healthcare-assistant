@@ -2,22 +2,40 @@
 import streamlit as st
 
 
+# ==============================================
+# MEDIFLOW AI - PREMIUM HEALTHCARE UI
+# ==============================================
+
 def apply_custom_style():
     st.markdown(
         """
         <style>
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
 
-        /* GLOBAL WEBSITE */
+        /* GLOBAL DESIGN */
+
         html, body, [class*="css"] {
             font-family: 'DM Sans', sans-serif;
         }
 
         .stApp {
             background:
-                radial-gradient(circle at 95% 8%, #e9e4ff 0%, transparent 30%),
-                radial-gradient(circle at 5% 85%, #d9f6ff 0%, transparent 35%),
-                linear-gradient(145deg, #f7fbff 0%, #f7f5ff 55%, #f0fbfa 100%);
+                radial-gradient(
+                    circle at 95% 8%,
+                    #e9e4ff 0%,
+                    transparent 30%
+                ),
+                radial-gradient(
+                    circle at 5% 85%,
+                    #d9f6ff 0%,
+                    transparent 35%
+                ),
+                linear-gradient(
+                    145deg,
+                    #f7fbff 0%,
+                    #f7f5ff 55%,
+                    #f0fbfa 100%
+                );
             color: #182642;
         }
 
@@ -28,6 +46,7 @@ def apply_custom_style():
         }
 
         /* SIDEBAR */
+
         [data-testid="stSidebar"] {
             background: linear-gradient(
                 175deg,
@@ -35,10 +54,7 @@ def apply_custom_style():
                 #33328c 48%,
                 #166e95 100%
             );
-        }
-
-        [data-testid="stSidebar"] {
-            color: #ffffff;
+            color: white;
         }
 
         [data-testid="stSidebar"] h1,
@@ -48,58 +64,36 @@ def apply_custom_style():
         [data-testid="stSidebar"] label,
         [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
             color: #ffffff !important;
-            -webkit-text-fill-color: #ffffff !important;
-        }
-
-        [data-testid="stSidebar"] .stRadio label {
-            color: #ffffff !important;
         }
 
         [data-testid="stSidebar"] [role="radiogroup"] p {
             color: #ffffff !important;
-            -webkit-text-fill-color: #ffffff !important;
         }
 
-        /* PATIENT DROPDOWN FIX */
-        [data-testid="stSidebar"] [data-baseweb="select"] {
-            background: #ffffff !important;
-            border-radius: 12px !important;
-        }
+        /* FIX PATIENT DROPDOWN */
 
+        [data-testid="stSidebar"] [data-baseweb="select"],
         [data-testid="stSidebar"] [data-baseweb="select"] > div {
             background: #ffffff !important;
             border-radius: 12px !important;
         }
 
-        [data-testid="stSidebar"] [data-baseweb="select"] * {
-            color: #17324d !important;
-            -webkit-text-fill-color: #17324d !important;
-        }
-
+        [data-testid="stSidebar"] [data-baseweb="select"] *,
         [data-testid="stSidebar"] [data-baseweb="select"] input {
             color: #17324d !important;
             -webkit-text-fill-color: #17324d !important;
-            caret-color: #17324d !important;
         }
 
         [data-testid="stSidebar"] [data-baseweb="select"] svg {
-            color: #17324d !important;
             fill: #17324d !important;
-        }
-
-        [data-baseweb="popover"] {
-            background: #ffffff !important;
+            color: #17324d !important;
         }
 
         [data-baseweb="popover"] [role="listbox"] {
-            background: #ffffff !important;
+            background: white !important;
         }
 
-        [data-baseweb="popover"] [role="option"] {
-            color: #17324d !important;
-            -webkit-text-fill-color: #17324d !important;
-        }
-
+        [data-baseweb="popover"] [role="option"],
         [data-baseweb="popover"] [role="option"] * {
             color: #17324d !important;
             -webkit-text-fill-color: #17324d !important;
@@ -110,6 +104,7 @@ def apply_custom_style():
         }
 
         /* HEADINGS */
+
         h1, h2, h3 {
             color: #1a3060;
             font-weight: 800;
@@ -139,6 +134,7 @@ def apply_custom_style():
         }
 
         /* HERO BANNER */
+
         .hero-banner {
             background: linear-gradient(
                 115deg,
@@ -150,7 +146,8 @@ def apply_custom_style():
             padding: 32px;
             color: white;
             margin: 12px 0 25px;
-            box-shadow: 0 16px 36px rgba(69, 85, 177, 0.18);
+            box-shadow:
+                0 16px 36px rgba(69, 85, 177, 0.18);
         }
 
         .hero-banner h2 {
@@ -177,7 +174,8 @@ def apply_custom_style():
             color: white;
         }
 
-        /* DASHBOARD METRIC CARDS */
+        /* METRIC CARDS */
+
         [data-testid="stMetric"] {
             background: linear-gradient(
                 145deg,
@@ -187,12 +185,8 @@ def apply_custom_style():
             border: 1px solid #e2e9fb;
             border-radius: 20px;
             padding: 22px;
-            box-shadow: 0 8px 24px rgba(30, 66, 127, 0.06);
-            transition: transform 0.2s ease;
-        }
-
-        [data-testid="stMetric"]:hover {
-            transform: translateY(-3px);
+            box-shadow:
+                0 8px 24px rgba(30, 66, 127, 0.06);
         }
 
         [data-testid="stMetricLabel"] {
@@ -206,19 +200,22 @@ def apply_custom_style():
         }
 
         /* BUTTONS */
+
         div.stButton > button[kind="primary"],
-        div[data-testid="stFormSubmitButton"] button[kind="primary"] {
+        div[data-testid="stFormSubmitButton"]
+        button[kind="primary"] {
             background: linear-gradient(
                 110deg,
                 #1677e7,
                 #6c4ce4
             );
-            color: #ffffff !important;
+            color: white !important;
             border: none;
             border-radius: 13px;
             font-weight: 700;
             padding: 0.65rem 1.4rem;
-            box-shadow: 0 6px 18px rgba(73, 82, 204, 0.2);
+            box-shadow:
+                0 6px 18px rgba(73, 82, 204, 0.2);
         }
 
         div.stButton > button[kind="primary"]:hover {
@@ -227,7 +224,7 @@ def apply_custom_style():
                 #105ec1,
                 #5335c6
             );
-            color: #ffffff !important;
+            color: white !important;
         }
 
         div.stButton > button[kind="secondary"] {
@@ -239,15 +236,18 @@ def apply_custom_style():
         }
 
         /* FORMS */
+
         div[data-testid="stForm"] {
             background: rgba(255,255,255,0.88);
             border: 1px solid #e0e8fa;
             border-radius: 20px;
             padding: 20px;
-            box-shadow: 0 8px 24px rgba(40, 70, 130, 0.05);
+            box-shadow:
+                0 8px 24px rgba(40, 70, 130, 0.05);
         }
 
         /* EXPANDERS */
+
         div[data-testid="stExpander"] {
             background: rgba(255,255,255,0.9);
             border: 1px solid #e0e8f7;
@@ -255,7 +255,8 @@ def apply_custom_style():
             overflow: hidden;
         }
 
-        /* TEXT INPUTS */
+        /* INPUTS */
+
         div[data-testid="stTextInput"] input,
         div[data-testid="stTextArea"] textarea {
             background: #ffffff;
@@ -265,7 +266,8 @@ def apply_custom_style():
             -webkit-text-fill-color: #182642;
         }
 
-        /* DATA TABLES */
+        /* TABLES */
+
         div[data-testid="stDataFrame"] {
             border-radius: 16px;
             overflow: hidden;
@@ -273,56 +275,19 @@ def apply_custom_style():
         }
 
         /* ALERTS */
+
         [data-testid="stAlert"] {
             border-radius: 14px;
         }
 
-        /* FEATURE CARDS */
-        .feature-grid {
-            display: grid;
-            grid-template-columns:
-                repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin: 22px 0;
+        /* FEATURE CARD CONTAINERS */
+
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+            border-radius: 18px;
         }
 
-        .feature-card {
-            background: #ffffff;
-            border: 1px solid #e3eaf9;
-            border-radius: 19px;
-            padding: 22px;
-            box-shadow: 0 8px 25px rgba(37, 69, 131, 0.06);
-        }
+        /* MOBILE RESPONSIVENESS */
 
-        .feature-icon {
-            font-size: 1.8rem;
-            margin-bottom: 12px;
-        }
-
-        .feature-card h3 {
-            color: #1a3060;
-            font-size: 1rem;
-            margin-bottom: 7px;
-        }
-
-        .feature-card p {
-            color: #65748d;
-            font-size: 0.88rem;
-            line-height: 1.5;
-        }
-
-        .section-label {
-            display: inline-block;
-            background: #e8efff;
-            color: #315bc0;
-            padding: 7px 13px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            margin-bottom: 12px;
-        }
-
-        /* MOBILE */
         @media (max-width: 700px) {
             .block-container {
                 padding: 1rem;
@@ -337,11 +302,16 @@ def apply_custom_style():
                 font-size: 1.4rem;
             }
         }
+
         </style>
         """,
         unsafe_allow_html=True
     )
 
+
+# ==============================================
+# HERO SECTION
+# ==============================================
 
 def render_hero():
     st.markdown(
@@ -350,11 +320,14 @@ def render_hero():
             <div class="hero-badge">
                 ✦ AI-POWERED HEALTHCARE PLATFORM
             </div>
-            <h2>Smarter Care. Seamless Coordination.</h2>
+            <h2>
+                Smarter Care. Seamless Coordination.
+            </h2>
             <p>
-                Your intelligent workspace for patient records,
-                appointment management, trusted medical research,
-                and explainable AI workflows.
+                Your intelligent workspace for patient
+                records, appointment management,
+                trusted medical research, and
+                explainable AI workflows.
             </p>
         </div>
         """,
@@ -362,42 +335,93 @@ def render_hero():
     )
 
 
+# ==============================================
+# FEATURE CARDS - NATIVE STREAMLIT
+# ==============================================
+
 def render_feature_cards():
-    st.markdown(
-        """
-        <div class="feature-grid">
-            <div class="feature-card">
-                <div class="feature-icon">🤖</div>
-                <h3>Intelligent AI Agent</h3>
-                <p>
-                    Multi-step planning and medical task coordination.
-                </p>
-            </div>
 
-            <div class="feature-card">
-                <div class="feature-icon">📅</div>
-                <h3>Smart Appointments</h3>
-                <p>
-                    Browse doctors and manage simulated bookings.
-                </p>
-            </div>
+    features = [
+        {
+            "icon": "🤖",
+            "title": "Intelligent AI Agent",
+            "description": (
+                "Plan multi-step healthcare requests "
+                "using Gemini AI and LangGraph."
+            ),
+            "color": "#eaf2ff",
+            "accent": "#2563eb"
+        },
+        {
+            "icon": "📅",
+            "title": "Smart Appointments",
+            "description": (
+                "Explore doctor availability and "
+                "manage simulated appointments."
+            ),
+            "color": "#f1eaff",
+            "accent": "#7c3aed"
+        },
+        {
+            "icon": "🧠",
+            "title": "Semantic Memory",
+            "description": (
+                "Retrieve fictional patient history "
+                "using FAISS vector search."
+            ),
+            "color": "#e4fbf7",
+            "accent": "#0f9b8e"
+        },
+        {
+            "icon": "📊",
+            "title": "Agent Analytics",
+            "description": (
+                "Review execution traces, logs, "
+                "and evaluation metrics."
+            ),
+            "color": "#fff2e5",
+            "accent": "#e07824"
+        }
+    ]
 
-            <div class="feature-card">
-                <div class="feature-icon">🧠</div>
-                <h3>Semantic Memory</h3>
-                <p>
-                    Find relevant patient context using FAISS.
-                </p>
-            </div>
+    columns = st.columns(4, gap="medium")
 
-            <div class="feature-card">
-                <div class="feature-icon">📊</div>
-                <h3>Agent Analytics</h3>
-                <p>
-                    Explore execution traces and evaluation metrics.
-                </p>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    for column, feature in zip(columns, features):
+
+        with column:
+            with st.container(border=True):
+
+                st.markdown(
+                    f"""
+                    <div style="
+                        background:{feature['color']};
+                        padding:14px;
+                        border-radius:12px;
+                        text-align:center;
+                        margin-bottom:12px;
+                    ">
+                        <span style="font-size:32px;">
+                            {feature['icon']}
+                        </span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(
+                    f"#### {feature['title']}"
+                )
+
+                st.write(feature["description"])
+
+                st.markdown(
+                    f"""
+                    <div style="
+                        height:5px;
+                        background:{feature['accent']};
+                        border-radius:8px;
+                        margin-top:12px;
+                    "></div>
+                    """,
+                    unsafe_allow_html=True
+                )
